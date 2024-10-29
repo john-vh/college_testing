@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS user_roles;
+DROP TYPE IF EXISTS user_role;

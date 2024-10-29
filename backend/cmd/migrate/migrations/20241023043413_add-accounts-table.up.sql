@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS accounts (
+  provider VARCHAR(255) NOT NULL,
+  id VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  email_verified BOOLEAN NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  PRIMARY KEY(provider, id)
+);

@@ -1,0 +1,157 @@
+package models
+
+import (
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type BusinessStatus int
+
+const (
+	BUSINESS_STATUS_PENDING BusinessStatus = iota
+	BUSINESS_STATUS_ACTIVE
+	BUSINESS_STATUS_DISABLED
+)
+
+func (bs BusinessStatus) String() string {
+	switch bs {
+	case BUSINESS_STATUS_PENDING:
+		return "pending"
+	case BUSINESS_STATUS_ACTIVE:
+		return "active"
+	case BUSINESS_STATUS_DISABLED:
+		return "disabled"
+	default:
+		return "unknown"
+	}
+}
+
+func (s *BusinessStatus) ScanText(value pgtype.Text) error {
+	switch value.String {
+	case "pending":
+		*s = BUSINESS_STATUS_PENDING
+		return nil
+	case "active":
+		*s = BUSINESS_STATUS_ACTIVE
+		return nil
+	case "disabled":
+		*s = BUSINESS_STATUS_DISABLED
+		return nil
+	default:
+		return errors.New("Unsupported value scanning business status")
+	}
+}
+
+func (s BusinessStatus) TextValue() (pgtype.Text, error) {
+	val := pgtype.Text{}
+	err := val.Scan(s.String())
+	return val, err
+}
+
+type BusinessUpdate struct {
+	Website string `json:"website" db:"website" validate:"required,http_url"`
+	Desc    string `json:"desc" db:"description" validate:"required,min=8,max=256"`
+}
+
+type BusinessCreate struct {
+	Name string `json:"name" db:"name" validate:"required,min=3,max=64"`
+	BusinessUpdate
+}
+
+type Business struct {
+	BusinessCreate
+	Id        uuid.UUID      `json:"id" db:"id"`
+	UserId    uuid.UUID      `json:"-" db:"user_id"`
+	Status    BusinessStatus `json:"status" db:"status"`
+	CreatedAt time.Time      `json:"created_at" db:"created_at"`
+}
+
+type PostUpdate struct {
+	Title string `json:"title" db:"title" validate:"required,min=8,max=256"`
+	Desc  string `json:"desc" db:"description" validate:"required,min=8,max=256"`
+}
+
+type PostStatus int
+
+const (
+	POST_STATUS_ACTIVE PostStatus = iota
+	POST_STATUS_DISABLED
+	POST_STATUS_ARCHIVED
+)
+
+func (ps PostStatus) String() string {
+	switch ps {
+	case POST_STATUS_ACTIVE:
+		return "active"
+	case POST_STATUS_DISABLED:
+		return "disabled"
+	case POST_STATUS_ARCHIVED:
+		return "archived"
+	default:
+		return "unknown"
+	}
+}
+
+func (s *PostStatus) ScanText(value pgtype.Text) error {
+	switch value.String {
+	case "active":
+		*s = POST_STATUS_ACTIVE
+		return nil
+	case "disabled":
+		*s = POST_STATUS_DISABLED
+		return nil
+	case "archived":
+		*s = POST_STATUS_ARCHIVED
+		return nil
+	default:
+		return errors.New("Unsupported value scanning post status")
+	}
+}
+
+func (s PostStatus) TextValue() (pgtype.Text, error) {
+	val := pgtype.Text{}
+	err := val.Scan(s.String())
+	return val, err
+}
+
+type PostCreate struct {
+	PostUpdate
+}
+
+type Post struct {
+	PostCreate
+	BusinessId uuid.UUID  `json:"business_id" db:"business_id"`
+	Id         int        `json:"id" db:"id"`
+	Status     PostStatus `json:"status" db:"status"`
+	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+type ApplicationStatus int
+
+const (
+	APPLICATION_STATUS_PENDING PostStatus = iota
+	APPLICATION_STATUS_ACCEPTED
+	APPLICATION_STATUS_REJECTED
+	APPLICATION_STATUS_WITHDRAWN
+	APPLICATION_STATUS_COMPLETED
+)
+
+type PostApplicationData struct {
+	User   UserOverview `json:"user" db:"user"`
+	Notes  string       `json:"notes" db:"notes"`
+	Status PostStatus   `json:"status" db:"status"`
+}
+
+type PostApplications struct {
+	BusinessId   uuid.UUID             `json:"business_id" db:"business_id"`
+	PostId       int                   `json:"post_id" db:"post_id"`
+	Applications []PostApplicationData `json:"applications" db:"applications"`
+}
+
+type ApplicationNoteUpdate struct {
+	Data string `json:"data" db:"data"`
+}
