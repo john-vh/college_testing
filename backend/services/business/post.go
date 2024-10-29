@@ -69,7 +69,8 @@ func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sess
 	// TODO: Authorize session to get applications
 
 	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.PostApplications, error) {
-		return pq.GetApplicationsForPost(ctx, businessId, postId)
+		// return pq.GetApplicationsForPost(ctx, businessId, postId)
+		return nil, nil
 	})
 	if err != nil {
 		h.logger.Debug("Error retrieving applications", "err", err)
