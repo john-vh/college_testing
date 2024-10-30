@@ -8,6 +8,11 @@
   width: 600px;
 }
 
+.Posting {
+  padding: 70px;
+  align-items: center;
+}
+
 .Test-list {
   padding-top: 20px;
   flex: 1;
@@ -59,30 +64,10 @@
   padding-right: 10px;
 }
 
-.filterbar.open {
-  animation: openFilterbar 0.5s forwards;
+.Footer {
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.filterbar.close {
-  animation: closeFilterbar 0.5s forwards;
-}
-
-@keyframes openFilterbar {
-  from {
-    width: 0;
-  }
-
-  to {
-    width: 200px;
-  }
-}
-
-@keyframes closeFilterbar {
-  from {
-    width: 200px;
-  }
-
-  to {
-    width: 0;
-  }
-}
