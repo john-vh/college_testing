@@ -21,6 +21,10 @@ type Config struct {
 	POSTGRES_PORT               string
 	POSTGRES_DB                 string
 	REDIS_ADDR                  string
+	MAIL_USER                   string
+	MAIL_PASSWORD               string
+	MAIL_HOST                   string
+	MAIL_PORT                   string
 }
 
 const (

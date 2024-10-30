@@ -11,6 +11,7 @@ import (
 	"github.com/john-vh/college_testing/backend/services"
 	"github.com/john-vh/college_testing/backend/services/auth"
 	"github.com/john-vh/college_testing/backend/services/business"
+	"github.com/john-vh/college_testing/backend/services/notifications"
 	"github.com/john-vh/college_testing/backend/services/sessions"
 	"github.com/john-vh/college_testing/backend/services/user"
 	"github.com/redis/go-redis/v9"
@@ -54,6 +55,13 @@ func (server *APIServer) Run() error {
 		return err
 	}
 	authHandler.RegisterRoutes(router)
+
+	// Mail
+	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PORT)
+	err = mailClient.SendMsg([]string{"william.trojniak@gmail.com"}, "Hello")
+	if err != nil {
+		slog.Debug("Failed to send mail", "err", err)
+	}
 
 	userHandler := user.NewUserHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	userHandler.RegisterRoutes(router)
