@@ -61,5 +61,5 @@ func (server *APIServer) Run() error {
 	businessHandler := business.NewBusinessHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	businessHandler.RegisterRoutes(router)
 
-	return http.ListenAndServe(server.addr, router)
+	return http.ListenAndServe(server.addr, services.CORSMiddleware(router))
 }
