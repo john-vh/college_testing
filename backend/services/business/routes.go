@@ -16,15 +16,33 @@ const (
 )
 
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
+	router.HandleFunc("GET /posts", h.handleErr(h.handleGetPosts))
 	router.HandleFunc("POST /businesses", h.handleErr(h.handleRequestBusiness))
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
 	router.HandleFunc("POST /businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts", h.handleErr(h.handleCreatePost))
 	router.HandleFunc("PATCH /businesses/{businessId}/posts/{postId}", h.handleErr(h.handleUpdatePost))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/activate", h.handleErr(h.handleActivatePost))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/apply", h.handleErr(h.handleApplyToPost))
 	router.HandleFunc("GET /businesses/{businessId}/posts/{postId}/applications", h.handleErr(h.handleGetPostApplications))
+}
+
+func (h *BusinessHandler) handleGetPosts(w http.ResponseWriter, r *http.Request) error {
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	posts, err := h.GetPosts(r.Context(), session, models.POST_STATUS_ACTIVE)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(posts)
+	return nil
 }
 
 func (h *BusinessHandler) handleRequestBusiness(w http.ResponseWriter, r *http.Request) error {
@@ -134,6 +152,30 @@ func (h *BusinessHandler) handleUpdatePost(w http.ResponseWriter, r *http.Reques
 	}
 
 	err = h.UpdatePost(r.Context(), session, &businessId, postId, &data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *BusinessHandler) handleActivatePost(w http.ResponseWriter, r *http.Request) error {
+	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	postId, err := strconv.Atoi(r.PathValue(postIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	err = h.SetPostStatus(r.Context(), session, &businessId, postId, models.POST_STATUS_ACTIVE)
 	if err != nil {
 		return err
 	}

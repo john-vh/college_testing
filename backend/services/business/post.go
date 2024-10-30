@@ -9,6 +9,14 @@ import (
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
+func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Session, status models.PostStatus) ([]models.Post, error) {
+	h.logger.Debug("Retreiving posts")
+	// TODO: Authorize session to retreive posts
+	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.Post, error) {
+		return pq.GetPosts(ctx, status)
+	})
+}
+
 func (h *BusinessHandler) CreatePost(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {
 	h.logger.Debug("Creating post", "Business Id", businessId)
 	// TODO: Authorize session to modify business
@@ -45,6 +53,21 @@ func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Sess
 		return err
 	}
 	h.logger.Debug("Updated post", "Business Id", businessId, "Post Id", postId)
+	return nil
+}
+
+func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, status models.PostStatus) error {
+	h.logger.Debug("Setting post status", "Business Id", businessId, "Post Id", postId, "status", status.String())
+	// TODO: Authorize session to modify post
+
+	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		return pq.SetPostStatus(ctx, businessId, postId, status)
+	})
+	if err != nil {
+		h.logger.Debug("Error setting post status", "err", err)
+		return err
+	}
+	h.logger.Debug("Set post status", "Business Id", businessId, "Post Id", postId)
 	return nil
 }
 

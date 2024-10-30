@@ -9,6 +9,26 @@ import (
 	"github.com/john-vh/college_testing/backend/models"
 )
 
+func (pq *PgxQueries) GetPosts(ctx context.Context, status models.PostStatus) ([]models.Post, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT posts.*
+    FROM posts
+    WHERE posts.status = @status
+    `, pgx.NamedArgs{
+		"status": status,
+	})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	posts, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Post])
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	return posts, nil
+}
+
 func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {
 	rows, err := pq.tx.Query(ctx, `
     INSERT INTO posts 
@@ -42,6 +62,29 @@ func (pq *PgxQueries) UpdatePost(ctx context.Context, businessId *uuid.UUID, pos
 		"postId":      postId,
 		"title":       data.Title,
 		"description": data.Desc,
+	})
+
+	if err != nil {
+		return handlePgxError(err)
+	}
+
+	if res.RowsAffected() == 0 {
+		return handlePgxError(ErrNoRows)
+	}
+
+	return nil
+}
+
+func (pq *PgxQueries) SetPostStatus(ctx context.Context, businessId *uuid.UUID, postId int, status models.PostStatus) error {
+	// Does not affected updated-at time
+	res, err := pq.tx.Exec(ctx, `
+    UPDATE posts SET
+    status = @status
+    WHERE posts.id = @postId AND posts.business_id = @businessId
+    `, pgx.NamedArgs{
+		"businessId": businessId,
+		"postId":     postId,
+		"status":     status,
 	})
 
 	if err != nil {
