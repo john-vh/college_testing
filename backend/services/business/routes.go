@@ -24,6 +24,7 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("PATCH /businesses/{businessId}/posts/{postId}", h.handleErr(h.handleUpdatePost))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/apply", h.handleErr(h.handleApplyToPost))
+	router.HandleFunc("GET /businesses/{businessId}/posts/{postId}/applications", h.handleErr(h.handleGetPostApplications))
 }
 
 func (h *BusinessHandler) handleRequestBusiness(w http.ResponseWriter, r *http.Request) error {
@@ -165,5 +166,30 @@ func (h *BusinessHandler) handleApplyToPost(w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
+	return nil
+}
+
+func (h *BusinessHandler) handleGetPostApplications(w http.ResponseWriter, r *http.Request) error {
+	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	postId, err := strconv.Atoi(r.PathValue(postIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+	applications, err := h.GetPostApplications(r.Context(), session, &businessId, postId)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(applications)
 	return nil
 }

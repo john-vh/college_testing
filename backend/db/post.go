@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -52,4 +53,42 @@ func (pq *PgxQueries) UpdatePost(ctx context.Context, businessId *uuid.UUID, pos
 	}
 
 	return nil
+}
+
+func (pq *PgxQueries) GetApplicationsForPost(ctx context.Context, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT post_applications.notes, post_applications.status,
+      json_build_object(
+      'id', users.id,
+      'created_at', users.created_at,
+      'email', accounts.email,
+      'name', accounts.name,
+      'email_verified', accounts.email_verified
+    ) AS user
+    FROM post_applications
+    LEFT JOIN users on post_applications.user_id = users.id
+    LEFT JOIN user_accounts ON users.id = user_accounts.user_id
+    LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id
+    WHERE post_applications.business_id = @businessId AND post_applications.post_id = @postId AND user_accounts.is_primary = TRUE
+    `, pgx.NamedArgs{
+		"businessId": businessId,
+		"postId":     postId,
+	})
+
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	data, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.PostApplicationData])
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return nil, handlePgxError(err)
+	}
+
+	applications := &models.PostApplications{
+		BusinessId:   *businessId,
+		PostId:       postId,
+		Applications: data,
+	}
+	return applications, nil
 }

@@ -133,17 +133,62 @@ type Post struct {
 type ApplicationStatus int
 
 const (
-	APPLICATION_STATUS_PENDING PostStatus = iota
+	APPLICATION_STATUS_PENDING ApplicationStatus = iota
 	APPLICATION_STATUS_ACCEPTED
 	APPLICATION_STATUS_REJECTED
 	APPLICATION_STATUS_WITHDRAWN
 	APPLICATION_STATUS_COMPLETED
 )
 
+func (ps ApplicationStatus) String() string {
+	switch ps {
+	case APPLICATION_STATUS_PENDING:
+		return "pending"
+	case APPLICATION_STATUS_ACCEPTED:
+		return "accepted"
+	case APPLICATION_STATUS_REJECTED:
+		return "rejected"
+	case APPLICATION_STATUS_WITHDRAWN:
+		return "withdrawn"
+	case APPLICATION_STATUS_COMPLETED:
+		return "completed"
+	default:
+		return "unknown"
+	}
+}
+
+func (s *ApplicationStatus) ScanText(value pgtype.Text) error {
+	switch value.String {
+	case "pending":
+		*s = APPLICATION_STATUS_PENDING
+		return nil
+	case "accepted":
+		*s = APPLICATION_STATUS_ACCEPTED
+		return nil
+	case "rejected":
+		*s = APPLICATION_STATUS_REJECTED
+		return nil
+	case "withdrawn":
+		*s = APPLICATION_STATUS_WITHDRAWN
+		return nil
+	case "completed":
+		*s = APPLICATION_STATUS_COMPLETED
+		return nil
+	default:
+		return errors.New("Unsupported value scanning application status")
+	}
+}
+
+func (s ApplicationStatus) TextValue() (pgtype.Text, error) {
+	val := pgtype.Text{}
+	err := val.Scan(s.String())
+	return val, err
+}
+
 type PostApplicationData struct {
-	User   UserOverview `json:"user" db:"user"`
-	Notes  string       `json:"notes" db:"notes"`
-	Status PostStatus   `json:"status" db:"status"`
+	User   UserOverview      `json:"user" db:"user"`
+	Notes  string            `json:"notes" db:"notes"`
+	Status ApplicationStatus `json:"status" db:"status"`
 }
 
 type PostApplications struct {
