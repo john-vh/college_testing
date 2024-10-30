@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/cache"
-	"github.com/WilliamTrojniak/StudentTests/backend/db"
-	"github.com/WilliamTrojniak/StudentTests/backend/env"
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
-	"github.com/WilliamTrojniak/StudentTests/backend/services/auth"
-	"github.com/WilliamTrojniak/StudentTests/backend/services/business"
-	"github.com/WilliamTrojniak/StudentTests/backend/services/sessions"
-	"github.com/WilliamTrojniak/StudentTests/backend/services/user"
+	"github.com/john-vh/college_testing/backend/cache"
+	"github.com/john-vh/college_testing/backend/db"
+	"github.com/john-vh/college_testing/backend/env"
+	"github.com/john-vh/college_testing/backend/services"
+	"github.com/john-vh/college_testing/backend/services/auth"
+	"github.com/john-vh/college_testing/backend/services/business"
+	"github.com/john-vh/college_testing/backend/services/sessions"
+	"github.com/john-vh/college_testing/backend/services/user"
 	"github.com/redis/go-redis/v9"
 )
 

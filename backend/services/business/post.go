@@ -3,10 +3,10 @@ package business
 import (
 	"context"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/db"
-	"github.com/WilliamTrojniak/StudentTests/backend/models"
-	"github.com/WilliamTrojniak/StudentTests/backend/services/sessions"
 	"github.com/google/uuid"
+	"github.com/john-vh/college_testing/backend/db"
+	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
 func (h *BusinessHandler) CreatePost(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {

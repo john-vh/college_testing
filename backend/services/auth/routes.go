@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/models"
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
-	"github.com/WilliamTrojniak/StudentTests/backend/util"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
+	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services"
+	"github.com/john-vh/college_testing/backend/util"
 	"golang.org/x/oauth2"
 )
 

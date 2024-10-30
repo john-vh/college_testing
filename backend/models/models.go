@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/john-vh/college_testing/backend/services"
 )
 
 var Validate *validator.Validate

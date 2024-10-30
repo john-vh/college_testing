@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/john-vh/college_testing/backend/models"
 )
 
 func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {

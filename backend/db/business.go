@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/models"
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services"
 )
 
 func (pq *PgxQueries) CreateBusiness(ctx context.Context, ownerId *uuid.UUID, data *models.BusinessCreate) (*models.Business, error) {

@@ -7,11 +7,11 @@ import (
 	"log"
 	"log/slog"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/cmd/api"
-	"github.com/WilliamTrojniak/StudentTests/backend/db"
-	"github.com/WilliamTrojniak/StudentTests/backend/env"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/john-vh/college_testing/backend/cmd/api"
+	"github.com/john-vh/college_testing/backend/db"
+	"github.com/john-vh/college_testing/backend/env"
 	"github.com/redis/go-redis/v9"
 )
 

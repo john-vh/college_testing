@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/env"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/john-vh/college_testing/backend/env"
 )
 
 var EXT_ENVIRONMENT string = env.DEV

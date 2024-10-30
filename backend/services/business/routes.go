@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/models"
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
 	"github.com/google/uuid"
+	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services"
 )
 
 const (

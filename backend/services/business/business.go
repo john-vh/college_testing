@@ -4,11 +4,11 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/db"
-	"github.com/WilliamTrojniak/StudentTests/backend/models"
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
-	"github.com/WilliamTrojniak/StudentTests/backend/services/sessions"
 	"github.com/google/uuid"
+	"github.com/john-vh/college_testing/backend/db"
+	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services"
+	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
 type BusinessHandler struct {

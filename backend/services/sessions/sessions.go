@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/WilliamTrojniak/StudentTests/backend/cache"
-	"github.com/WilliamTrojniak/StudentTests/backend/services"
-	"github.com/WilliamTrojniak/StudentTests/backend/util"
 	"github.com/google/uuid"
+	"github.com/john-vh/college_testing/backend/cache"
+	"github.com/john-vh/college_testing/backend/services"
+	"github.com/john-vh/college_testing/backend/util"
 )
 
 const (

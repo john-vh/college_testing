@@ -1,4 +1,4 @@
-module github.com/WilliamTrojniak/StudentTests/backend
+module github.com/john-vh/college_testing/backend
 
 go 1.22.4
 
