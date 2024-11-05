@@ -56,7 +56,7 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 	state, err := r.Cookie("state")
 	if err != nil || r.URL.Query().Get("state") != state.Value {
 		auth.logger.Debug("State did not match")
-		return services.NewInternalServiceError(err)
+		return services.NewBadRequestServiceError(err)
 	}
 
 	oauth2Token, err := client.config.Exchange(r.Context(), r.URL.Query().Get("code"))

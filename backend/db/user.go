@@ -108,8 +108,6 @@ func (pq *PgxQueries) GetUserForId(ctx context.Context, id *uuid.UUID) (*models.
 	rows, err := pq.tx.Query(ctx, `
     SELECT 
       users.*, accounts.email, accounts.email_verified, accounts.name,
-      (SELECT array_remove(array_agg(user_roles.role), NULL) 
-       FROM user_roles WHERE user_roles.user_id = @userId) AS roles,
       (SELECT COALESCE(json_agg(accounts.*) FILTER (WHERE accounts.id IS NOT NULL), '[]')
        FROM user_accounts
        LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id 
@@ -123,20 +121,33 @@ func (pq *PgxQueries) GetUserForId(ctx context.Context, id *uuid.UUID) (*models.
 		pgx.NamedArgs{
 			"userId": id,
 		})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
 
-	/*
-
-	   (SELECT array_remove(array_agg(account_info(accounts.provider, accounts.id, accounts.name, accounts.email, accounts.email_verified, user_accounts.is_primary, user_accounts.created_at, accounts.updated_at)), NULL)
-	    FROM accounts
-	    RIGHT JOIN user_accounts ON accounts.provider = user_accounts.account_provider AND accounts.id = user_accounts.account_id
-	    WHERE user_accounts.user_id = @userId) AS accounts
-	*/
-
-	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[models.User])
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByNameLax[models.User])
 	if err != nil {
 		fmt.Println(err)
 		return nil, handlePgxError(err)
 	}
 
+	rows, err = pq.tx.Query(ctx, `
+      SELECT user_roles.role 
+      FROM user_roles 
+      WHERE user_roles.user_id = @userId
+    `, pgx.NamedArgs{
+		"userId": id,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return nil, handlePgxError(err)
+	}
+
+	var role models.UserRole
+	pgx.ForEachRow(rows, []any{&role}, func() error {
+		user.Roles = append(user.Roles, role)
+
+		return nil
+	})
 	return user, nil
 }

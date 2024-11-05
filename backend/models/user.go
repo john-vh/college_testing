@@ -2,6 +2,8 @@ package models
 
 import (
 	"errors"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,6 +60,32 @@ const (
 	USER_ROLE_ADMIN UserRole = iota
 )
 
+func (ur UserRole) String() string {
+	switch ur {
+	case USER_ROLE_ADMIN:
+		return "admin"
+	default:
+		return "unknown"
+	}
+}
+
+func (role *UserRole) ScanText(value pgtype.Text) error {
+	switch value.String {
+	case "admin":
+		*role = USER_ROLE_ADMIN
+		return nil
+	default:
+		return errors.New("Unsupported value scanning user role")
+	}
+}
+
+func (role UserRole) TextValue() (pgtype.Text, error) {
+	val := pgtype.Text{}
+	err := val.Scan(role.String())
+	return val, err
+
+}
+
 type acctInfo struct {
 	Email         string `json:"email" db:"email"`
 	Name          string `json:"name" db:"name"`
@@ -80,13 +108,26 @@ type UserOverview struct {
 	acctInfo
 }
 
+type UserAccount struct {
+	acctInfo
+	Provider string `json:"provider" db:"provider"`
+	// IsPrimary bool      `json:"is_primary" db:"is_primary"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
 type User struct {
 	UserOverview
-	Roles    []UserRole `json:"-" db:"roles" validate:"required,dive"`
-	Accounts []struct {
-		acctInfo
-		Provider string `json:"provider" db:"provider"`
-		// IsPrimary bool      `json:"is_primary" db:"is_primary"`
-		UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
-	} `json:"accounts" db:"accounts"`
+	Roles    []UserRole    `json:"-" db:"roles" validate:"required,dive"`
+	Accounts []UserAccount `json:"accounts" db:"accounts"`
+}
+
+func (u *User) HasRole(role UserRole) bool {
+	return slices.Contains(u.Roles, role)
+}
+
+func (u *User) IsStudent() bool {
+	// HACK: Need to improve student verification
+	return slices.ContainsFunc(u.Accounts, func(ua UserAccount) bool {
+		return strings.HasSuffix(ua.Email, ".edu")
+	})
 }

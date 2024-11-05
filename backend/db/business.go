@@ -41,6 +41,36 @@ func (pq *PgxQueries) CreateBusiness(ctx context.Context, ownerId *uuid.UUID, da
 	return business, nil
 }
 
+func (pq *PgxQueries) GetBusinessOwner(ctx context.Context, businessId *uuid.UUID) (*models.User, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT 
+      users.*, accounts.email, accounts.email_verified, accounts.name,
+      (SELECT array_remove(array_agg(user_roles.role), NULL) 
+       FROM user_roles WHERE user_roles.user_id = @userId) AS roles,
+      (SELECT COALESCE(json_agg(accounts.*) FILTER (WHERE accounts.id IS NOT NULL), '[]')
+       FROM user_accounts
+       LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id 
+        WHERE user_accounts.user_id = @userId
+      ) as accounts
+    FROM users
+    LEFT JOIN user_accounts ON users.id = user_accounts.user_id AND user_accounts.is_primary = TRUE
+    LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id
+    LEFT JOIN businesses ON businesses.user_id = users.id
+    WHERE businesses.id = @businessId
+    `,
+		pgx.NamedArgs{
+			"businessId": businessId,
+		})
+
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[models.User])
+	if err != nil {
+		fmt.Println(err)
+		return nil, handlePgxError(err)
+	}
+
+	return user, nil
+}
+
 func (pq *PgxQueries) UpdateBusiness(ctx context.Context, businessId *uuid.UUID, data *models.BusinessUpdate) error {
 
 	res, err := pq.tx.Exec(ctx, `
