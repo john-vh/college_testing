@@ -57,7 +57,7 @@ func (server *APIServer) Run() error {
 	authHandler.RegisterRoutes(router)
 
 	// Mail
-	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PORT)
+	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PASSWORD)
 	err = mailClient.SendMsg([]string{"william.trojniak@gmail.com"}, "Hello")
 	if err != nil {
 		slog.Debug("Failed to send mail", "err", err)
