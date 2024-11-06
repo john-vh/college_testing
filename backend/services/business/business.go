@@ -49,6 +49,15 @@ func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions
 	})
 }
 
+func (h *BusinessHandler) GetBusinesses(ctx context.Context, session *sessions.Session, params *models.BusinessQueryParams) ([]models.Business, error) {
+	// TODO: Authorization of session to get the requested businesses
+	// Need to consider the params
+
+	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.Business, error) {
+		return pq.GetBusinesses(ctx, params)
+	})
+}
+
 func (h *BusinessHandler) UpdateBusiness(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, data *models.BusinessUpdate) error {
 	// TODO: Authorization of the session to modify the requested business
 

@@ -9,13 +9,19 @@ import (
 	"github.com/john-vh/college_testing/backend/models"
 )
 
-func (pq *PgxQueries) GetPosts(ctx context.Context, status models.PostStatus) ([]models.Post, error) {
+func (pq *PgxQueries) GetPosts(ctx context.Context, params *models.PostQueryParams) ([]models.Post, error) {
 	rows, err := pq.tx.Query(ctx, `
     SELECT posts.*
     FROM posts
-    WHERE posts.status = @status
+    LEFT JOIN businesses ON businesses.id = posts.business_id
+    LEFT JOIN users ON businesses.user_id = users.id
+    WHERE (@status::post_status IS NULL OR @status::post_status = posts.status)
+    AND (@businessId::UUID IS NULL OR @businessId::UUID = posts.business_id)
+    AND (@userId::UUID IS NULL OR @userId::UUID = users.id)
     `, pgx.NamedArgs{
-		"status": status,
+		"status":     params.Status,
+		"businessId": params.BusinessId,
+		"userId":     params.UserId,
 	})
 	if err != nil {
 		return nil, handlePgxError(err)
