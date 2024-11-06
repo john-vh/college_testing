@@ -2,10 +2,12 @@ package business
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/db"
 	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services/notifications"
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
@@ -83,6 +85,30 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 		h.logger.Debug("Error creating application", "err", err)
 		return err
 	}
+
+	go func() {
+		user, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
+			user, err := pq.GetUserForId(context.TODO(), userId)
+			return user, err
+		})
+		if err != nil {
+			h.logger.Debug("failed to get user while sending email")
+			return
+		}
+
+		email := &notifications.MailInfo{
+			ToList:  []string{user.Email},
+			Subject: "Application Received",
+			Body: fmt.Sprintf(
+				`Hi %v!\n
+        This is a confirmation email for applying! Expect to hear back from them soon.
+        `, user.Name),
+		}
+		err = h.notifications.SendMsg(email.ToList, email)
+		if err != nil {
+			h.logger.Debug("Failed to send application confirmation email")
+		}
+	}()
 
 	h.logger.Debug("Created application", "Business Id", businessId, "Post Id", postId, "User Id", userId)
 	return nil
