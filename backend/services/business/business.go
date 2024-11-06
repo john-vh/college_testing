@@ -8,27 +8,31 @@ import (
 	"github.com/john-vh/college_testing/backend/db"
 	"github.com/john-vh/college_testing/backend/models"
 	"github.com/john-vh/college_testing/backend/services"
+	"github.com/john-vh/college_testing/backend/services/notifications"
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
 type BusinessHandler struct {
-	logger    *slog.Logger
-	sessions  *sessions.SessionsHandler
-	store     *db.PgxStore
-	handleErr services.ServicesHTTPErrorHandler
+	logger        *slog.Logger
+	sessions      *sessions.SessionsHandler
+	notifications *notifications.MailClient
+	store         *db.PgxStore
+	handleErr     services.ServicesHTTPErrorHandler
 }
 
 func NewBusinessHandler(
 	logger *slog.Logger,
 	errHandler services.ServicesHTTPErrorHandler,
 	sessions *sessions.SessionsHandler,
+	notifications *notifications.MailClient,
 	store *db.PgxStore,
 ) *BusinessHandler {
 	return &BusinessHandler{
-		logger:    logger,
-		sessions:  sessions,
-		store:     store,
-		handleErr: errHandler,
+		logger:        logger,
+		sessions:      sessions,
+		notifications: notifications,
+		store:         store,
+		handleErr:     errHandler,
 	}
 }
 

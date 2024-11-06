@@ -58,15 +58,11 @@ func (server *APIServer) Run() error {
 
 	// Mail
 	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PASSWORD)
-	err = mailClient.SendMsg([]string{"william.trojniak@gmail.com"}, "Hello")
-	if err != nil {
-		slog.Debug("Failed to send mail", "err", err)
-	}
 
 	userHandler := user.NewUserHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	userHandler.RegisterRoutes(router)
 
-	businessHandler := business.NewBusinessHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
+	businessHandler := business.NewBusinessHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, mailClient, server.store)
 	businessHandler.RegisterRoutes(router)
 
 	return http.ListenAndServe(server.addr, router)
