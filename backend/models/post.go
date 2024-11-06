@@ -72,6 +72,7 @@ type Post struct {
 type PostQueryParams struct {
 	Status     *PostStatus
 	BusinessId *uuid.UUID
+	UserId     *uuid.UUID
 }
 
 type ApplicationStatus int

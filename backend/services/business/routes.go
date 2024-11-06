@@ -23,6 +23,7 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("GET /businesses", h.handleErr(h.handleGetBusinesses))
 	router.HandleFunc("GET /users/0/businesses", h.handleErr(h.handleGetUserBusinesses))
+	router.HandleFunc("GET /users/0/posts", h.handleErr(h.handleGetUserPosts))
 	router.HandleFunc("POST /users/0/businesses", h.handleErr(h.handleRequestBusiness))
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
 	router.HandleFunc("POST /businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
@@ -38,7 +39,7 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 
 func (h *BusinessHandler) handleGetActivePosts(w http.ResponseWriter, r *http.Request) error {
 	const (
-		businessId_param string = "business"
+		param_business string = "business"
 	)
 	session, err := h.sessions.GetSession(r)
 	if err != nil {
@@ -46,8 +47,8 @@ func (h *BusinessHandler) handleGetActivePosts(w http.ResponseWriter, r *http.Re
 	}
 
 	var businessId *uuid.UUID
-	if r.URL.Query().Has(businessId_param) {
-		if id, err := uuid.Parse(r.URL.Query().Get(businessId_param)); err == nil {
+	if r.URL.Query().Has(param_business) {
+		if id, err := uuid.Parse(r.URL.Query().Get(param_business)); err == nil {
 			businessId = &id
 		}
 	}
@@ -135,6 +136,37 @@ func (h *BusinessHandler) handleGetUserBusinesses(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(businesses)
+	return nil
+}
+
+func (h *BusinessHandler) handleGetUserPosts(w http.ResponseWriter, r *http.Request) error {
+	const (
+		param_business = "business"
+	)
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	var businessId *uuid.UUID
+	if r.URL.Query().Has(param_business) {
+		if id, err := uuid.Parse(r.URL.Query().Get(param_business)); err == nil {
+			businessId = &id
+		}
+	}
+
+	params := models.PostQueryParams{
+		UserId:     session.GetUserId(),
+		BusinessId: businessId,
+	}
+
+	posts, err := h.GetPosts(r.Context(), session, &params)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(posts)
 	return nil
 }
 
