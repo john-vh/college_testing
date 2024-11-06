@@ -16,7 +16,7 @@ const (
 )
 
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
-	router.HandleFunc("GET /posts", h.handleErr(h.handleGetPosts))
+	router.HandleFunc("GET /posts", h.handleErr(h.handleGetActivePosts))
 	router.HandleFunc("POST /businesses", h.handleErr(h.handleRequestBusiness))
 	router.HandleFunc("GET /businesses", h.handleErr(h.handleGetBusinesses))
 	router.HandleFunc("GET /users/0/businesses", h.handleErr(h.handleGetUserBusinesses))
@@ -24,6 +24,7 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts", h.handleErr(h.handleCreatePost))
+	router.HandleFunc("GET /businesses/{businessId}/posts", h.handleErr(h.handleGetBusinessPosts))
 	router.HandleFunc("PATCH /businesses/{businessId}/posts/{postId}", h.handleErr(h.handleUpdatePost))
 	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/activate", h.handleErr(h.handleActivatePost))
 
@@ -31,13 +32,29 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /businesses/{businessId}/posts/{postId}/applications", h.handleErr(h.handleGetPostApplications))
 }
 
-func (h *BusinessHandler) handleGetPosts(w http.ResponseWriter, r *http.Request) error {
+func (h *BusinessHandler) handleGetActivePosts(w http.ResponseWriter, r *http.Request) error {
+	const (
+		businessId_param string = "business"
+	)
 	session, err := h.sessions.GetSession(r)
 	if err != nil {
 		return err
 	}
 
-	posts, err := h.GetPosts(r.Context(), session, models.POST_STATUS_ACTIVE)
+	var businessId *uuid.UUID
+	if r.URL.Query().Has(businessId_param) {
+		if id, err := uuid.Parse(r.URL.Query().Get(businessId_param)); err == nil {
+			businessId = &id
+		}
+	}
+
+	status := models.POST_STATUS_ACTIVE
+	params := models.PostQueryParams{
+		Status:     &status,
+		BusinessId: businessId,
+	}
+
+	posts, err := h.GetPosts(r.Context(), session, &params)
 	if err != nil {
 		return err
 	}
@@ -174,6 +191,31 @@ func (h *BusinessHandler) handleCreatePost(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(post)
+	return nil
+}
+
+func (h *BusinessHandler) handleGetBusinessPosts(w http.ResponseWriter, r *http.Request) error {
+	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+	params := models.PostQueryParams{
+		Status:     nil,
+		BusinessId: &businessId,
+	}
+
+	posts, err := h.GetPosts(r.Context(), session, &params)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(posts)
 	return nil
 }
 
