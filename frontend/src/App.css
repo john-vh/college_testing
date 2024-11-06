@@ -1,6 +1,7 @@
 .App {
   padding-top: 50px;
   display: flex;
+  height: 100vh;
 }
 
 .Card {
@@ -71,3 +72,11 @@
   align-items: center;
 }
 
+.p {
+  padding: 10px;
+}
+
+.content {
+  padding: 20px;
+  flex: 1;
+}

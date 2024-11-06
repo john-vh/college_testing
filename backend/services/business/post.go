@@ -9,11 +9,12 @@ import (
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
-func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Session, status models.PostStatus) ([]models.Post, error) {
+func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Session, params *models.PostQueryParams) ([]models.Post, error) {
 	h.logger.Debug("Retreiving posts")
 	// TODO: Authorize session to retreive posts
+
 	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.Post, error) {
-		return pq.GetPosts(ctx, status)
+		return pq.GetPosts(ctx, params)
 	})
 }
 

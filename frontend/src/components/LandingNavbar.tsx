@@ -1,9 +1,14 @@
 import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, Divider } from "@blueprintjs/core";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
-export const LandingNavbar = () => {
+interface LandingBarProps {
+    showAccount?: boolean;
+}
+
+export const LandingNavbar = ({ showAccount = true }: LandingBarProps) => {
     const navigate = useNavigate();
-    const handleClick = () => { navigate(`/account`); };
+    const handleClick = () => { showAccount ? navigate(`/account`) : navigate('/'); };
 
     return (
         <Navbar fixedToTop={true}>
@@ -14,7 +19,8 @@ export const LandingNavbar = () => {
             </Navbar.Group>
             <Navbar.Group align={Alignment.RIGHT}>
                 <Navbar.Divider />
-                <Button className="bp5-minimal" icon="user" text="Account" onClick={handleClick} />
+                {showAccount ? <Button className="bp5-minimal" icon="user" text="Account" onClick={handleClick} /> : <Button className="bp5-minimal" icon="home" text="Home" onClick={handleClick} />}
+
             </Navbar.Group>
         </Navbar>
     );
