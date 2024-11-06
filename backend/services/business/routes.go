@@ -17,9 +17,13 @@ const (
 
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /posts", h.handleErr(h.handleGetActivePosts))
+
+	// DEPRECATED: Moved to /users/0/businesses
 	router.HandleFunc("POST /businesses", h.handleErr(h.handleRequestBusiness))
+
 	router.HandleFunc("GET /businesses", h.handleErr(h.handleGetBusinesses))
 	router.HandleFunc("GET /users/0/businesses", h.handleErr(h.handleGetUserBusinesses))
+	router.HandleFunc("POST /users/0/businesses", h.handleErr(h.handleRequestBusiness))
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
 	router.HandleFunc("POST /businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
 
