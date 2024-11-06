@@ -18,6 +18,8 @@ const (
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /posts", h.handleErr(h.handleGetPosts))
 	router.HandleFunc("POST /businesses", h.handleErr(h.handleRequestBusiness))
+	router.HandleFunc("GET /businesses", h.handleErr(h.handleGetBusinesses))
+	router.HandleFunc("GET /users/0/businesses", h.handleErr(h.handleGetUserBusinesses))
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
 	router.HandleFunc("POST /businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
 
@@ -67,6 +69,51 @@ func (h *BusinessHandler) handleRequestBusiness(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(business)
+	return nil
+}
+
+func (h *BusinessHandler) handleGetBusinesses(w http.ResponseWriter, r *http.Request) error {
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+	status := models.BUSINESS_STATUS_ACTIVE
+
+	params := models.BusinessQueryParams{
+		Status: &status,
+	}
+
+	businesses, err := h.GetBusinesses(r.Context(), session, &params)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(businesses)
+	return nil
+}
+
+func (h *BusinessHandler) handleGetUserBusinesses(w http.ResponseWriter, r *http.Request) error {
+	const (
+		param_status string = "status"
+	)
+
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	params := models.BusinessQueryParams{
+		UserId: session.GetUserId(),
+	}
+
+	businesses, err := h.GetBusinesses(r.Context(), session, &params)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(businesses)
 	return nil
 }
 

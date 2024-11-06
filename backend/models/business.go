@@ -69,6 +69,11 @@ type Business struct {
 	CreatedAt time.Time      `json:"created_at" db:"created_at"`
 }
 
+type BusinessQueryParams struct {
+	Status *BusinessStatus
+	UserId *uuid.UUID
+}
+
 type PostUpdate struct {
 	Title string `json:"title" db:"title" validate:"required,min=8,max=256"`
 	Desc  string `json:"desc" db:"description" validate:"required,min=8,max=256"`
