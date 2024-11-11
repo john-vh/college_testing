@@ -37,7 +37,7 @@ func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Sessio
 			}
 		}
 
-		if (params.Status != nil && *params.Status != models.POST_STATUS_ACTIVE) &&
+		if (params.Status == nil || *params.Status != models.POST_STATUS_ACTIVE) &&
 			!(user.HasRole(models.USER_ROLE_ADMIN) ||
 				(params.UserId != nil && *params.UserId == *userId) ||
 				(business != nil && business.UserId == *userId)) {
