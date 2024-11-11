@@ -18,6 +18,7 @@ const (
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /admin/businesses", h.handleErr(h.handleQueryAllBusinesses))
 	router.HandleFunc("GET /admin/posts", h.handleErr(h.handleQueryAllPosts))
+	router.HandleFunc("POST /admin/businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
 
 	router.HandleFunc("GET /posts", h.handleErr(h.handleGetActivePosts))
 
@@ -29,7 +30,6 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /users/0/posts", h.handleErr(h.handleGetUserPosts))
 	router.HandleFunc("POST /users/0/businesses", h.handleErr(h.handleRequestBusiness))
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
-	router.HandleFunc("POST /businesses/{businessId}/approve", h.handleErr(h.handleApproveBusiness))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts", h.handleErr(h.handleCreatePost))
 	router.HandleFunc("GET /businesses/{businessId}/posts", h.handleErr(h.handleGetBusinessPosts))
