@@ -71,6 +71,32 @@ func (pq *PgxQueries) GetBusinessOwner(ctx context.Context, businessId *uuid.UUI
 	return user, nil
 }
 
+func (pq *PgxQueries) GetBusinesses(ctx context.Context, params *models.BusinessQueryParams) ([]models.Business, error) {
+	if params == nil {
+		params = &models.BusinessQueryParams{}
+	}
+
+	rows, err := pq.tx.Query(ctx, `
+    SELECT * FROM businesses
+    WHERE (@status::business_status IS NULL OR @status::business_status = businesses.status)
+    AND (@userId::UUID IS NULL OR @userId::UUID = businesses.user_id)
+    `,
+		pgx.NamedArgs{
+			"status": params.Status,
+			"userId": params.UserId,
+		})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	businesses, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Business])
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	return businesses, nil
+}
+
 func (pq *PgxQueries) UpdateBusiness(ctx context.Context, businessId *uuid.UUID, data *models.BusinessUpdate) error {
 
 	res, err := pq.tx.Exec(ctx, `

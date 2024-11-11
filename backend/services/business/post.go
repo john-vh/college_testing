@@ -10,7 +10,7 @@ import (
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
-func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Session, status models.PostStatus) ([]models.Post, error) {
+func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Session, params *models.PostQueryParams) ([]models.Post, error) {
 	h.logger.Debug("Retreiving posts")
 	userId := session.GetUserId()
 	if userId == nil {
@@ -26,7 +26,7 @@ func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Sessio
 			return nil, services.NewUnauthorizedServiceError(nil)
 		}
 
-		return pq.GetPosts(ctx, status)
+		return pq.GetPosts(ctx, params)
 	})
 }
 

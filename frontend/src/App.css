@@ -1,11 +1,17 @@
 .App {
   padding-top: 50px;
   display: flex;
+  height: 100vh;
 }
 
 .Card {
   padding-bottom: 20px;
   width: 600px;
+}
+
+.Posting {
+  padding: 70px;
+  align-items: center;
 }
 
 .Test-list {
@@ -59,30 +65,18 @@
   padding-right: 10px;
 }
 
-.filterbar.open {
-  animation: openFilterbar 0.5s forwards;
+.Footer {
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.filterbar.close {
-  animation: closeFilterbar 0.5s forwards;
+.p {
+  padding: 10px;
 }
 
-@keyframes openFilterbar {
-  from {
-    width: 0;
-  }
-
-  to {
-    width: 200px;
-  }
-}
-
-@keyframes closeFilterbar {
-  from {
-    width: 200px;
-  }
-
-  to {
-    width: 0;
-  }
+.content {
+  padding: 20px;
+  flex: 1;
 }
