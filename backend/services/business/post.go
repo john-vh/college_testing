@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/db"
@@ -20,10 +21,27 @@ func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Sessio
 	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.Post, error) {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
-			return nil, err
+			return nil, services.NewUnauthorizedServiceError(err)
 		}
-		if !user.IsStudent() && !user.HasRole(models.USER_ROLE_ADMIN) {
-			return nil, services.NewUnauthorizedServiceError(nil)
+
+		if params == nil {
+			params = &models.PostQueryParams{}
+		}
+
+		var business *models.Business
+		if params.BusinessId != nil {
+			business, err = pq.GetBusinessForId(ctx, params.BusinessId)
+			if err != nil {
+				// HACK: Need to implement better error handling between service and db levels
+				business = nil
+			}
+		}
+
+		if (params.Status != nil && *params.Status != models.POST_STATUS_ACTIVE) &&
+			!(user.HasRole(models.USER_ROLE_ADMIN) ||
+				(params.UserId != nil && *params.UserId == *userId) ||
+				(business != nil && business.UserId == *userId)) {
+			return nil, services.NewUnauthorizedServiceError(fmt.Errorf("Attempted to view inactive posts"))
 		}
 
 		return pq.GetPosts(ctx, params)

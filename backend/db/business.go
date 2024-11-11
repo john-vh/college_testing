@@ -97,6 +97,26 @@ func (pq *PgxQueries) GetBusinesses(ctx context.Context, params *models.Business
 	return businesses, nil
 }
 
+func (pq *PgxQueries) GetBusinessForId(ctx context.Context, id *uuid.UUID) (*models.Business, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT * FROM businesses
+    WHERE businesses.id = @businessId
+    `,
+		pgx.NamedArgs{
+			"businessId": id,
+		})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	business, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[models.Business])
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	return business, nil
+}
+
 func (pq *PgxQueries) UpdateBusiness(ctx context.Context, businessId *uuid.UUID, data *models.BusinessUpdate) error {
 
 	res, err := pq.tx.Exec(ctx, `

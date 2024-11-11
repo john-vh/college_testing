@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -53,10 +54,27 @@ func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions
 }
 
 func (h *BusinessHandler) GetBusinesses(ctx context.Context, session *sessions.Session, params *models.BusinessQueryParams) ([]models.Business, error) {
-	// TODO: Authorization of session to get the requested businesses
-	// Need to consider the params
+	userId := session.GetUserId()
+	if userId == nil {
+		return nil, services.NewUnauthenticatedServiceError(nil)
+	}
+
+	if params == nil {
+		params = &models.BusinessQueryParams{}
+	}
 
 	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.Business, error) {
+		user, err := pq.GetUserForId(ctx, userId)
+		if err != nil {
+			return nil, services.NewUnauthenticatedServiceError(err)
+		}
+
+		if (params.Status != nil && *params.Status != models.BUSINESS_STATUS_ACTIVE) &&
+			!(user.HasRole(models.USER_ROLE_ADMIN) ||
+				(*params.UserId == *userId)) {
+			return nil, services.NewUnauthorizedServiceError(fmt.Errorf("User attempted to retrieve non-active businesses"))
+		}
+
 		return pq.GetBusinesses(ctx, params)
 	})
 }
