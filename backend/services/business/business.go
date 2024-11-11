@@ -69,9 +69,9 @@ func (h *BusinessHandler) GetBusinesses(ctx context.Context, session *sessions.S
 			return nil, services.NewUnauthenticatedServiceError(err)
 		}
 
-		if (params.Status == nil && *params.Status != models.BUSINESS_STATUS_ACTIVE) &&
+		if (params.Status == nil || *params.Status != models.BUSINESS_STATUS_ACTIVE) &&
 			!(user.HasRole(models.USER_ROLE_ADMIN) ||
-				(*params.UserId == *userId)) {
+				(params.UserId != nil && *params.UserId == *userId)) {
 			return nil, services.NewUnauthorizedServiceError(fmt.Errorf("User attempted to retrieve non-active businesses"))
 		}
 
