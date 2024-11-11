@@ -41,7 +41,7 @@ func (auth *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) err
 	setCallbackCookie(w, "state", state)
 	setCallbackCookie(w, "nonce", nonce)
 	setCallbackCookie(w, "redirect", redirect)
-	http.Redirect(w, r, client.config.AuthCodeURL(state, oidc.Nonce(nonce)), http.StatusFound)
+	http.Redirect(w, r, client.config.AuthCodeURL(state, oidc.Nonce(nonce), oauth2.ApprovalForce), http.StatusFound)
 
 	return nil
 }
