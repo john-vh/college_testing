@@ -16,6 +16,9 @@ const (
 )
 
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
+	router.HandleFunc("GET /admin/businesses", h.handleErr(h.handleQueryAllBusinesses))
+	router.HandleFunc("GET /admin/posts", h.handleErr(h.handleQueryAllPosts))
+
 	router.HandleFunc("GET /posts", h.handleErr(h.handleGetActivePosts))
 
 	// DEPRECATED: Moved to /users/0/businesses
@@ -35,6 +38,76 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/apply", h.handleErr(h.handleApplyToPost))
 	router.HandleFunc("GET /businesses/{businessId}/posts/{postId}/applications", h.handleErr(h.handleGetPostApplications))
+}
+
+func (h *BusinessHandler) handleQueryAllBusinesses(w http.ResponseWriter, r *http.Request) error {
+	const (
+		param_user string = "user"
+	)
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	var userId *uuid.UUID
+	if r.URL.Query().Has(param_user) {
+		if id, err := uuid.Parse(r.URL.Query().Get(param_user)); err == nil {
+			userId = &id
+		}
+	}
+
+	// TODO: Paramaterize status
+	params := models.BusinessQueryParams{
+		UserId: userId,
+	}
+
+	businesses, err := h.GetBusinesses(r.Context(), session, &params)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(businesses)
+	return nil
+}
+
+func (h *BusinessHandler) handleQueryAllPosts(w http.ResponseWriter, r *http.Request) error {
+	const (
+		param_business string = "business"
+		param_user     string = "user"
+	)
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	var businessId *uuid.UUID
+	if r.URL.Query().Has(param_business) {
+		if id, err := uuid.Parse(r.URL.Query().Get(param_business)); err == nil {
+			businessId = &id
+		}
+	}
+	var userId *uuid.UUID
+	if r.URL.Query().Has(param_user) {
+		if id, err := uuid.Parse(r.URL.Query().Get(param_user)); err == nil {
+			userId = &id
+		}
+	}
+
+	// TODO: Paramaterize status
+	params := models.PostQueryParams{
+		BusinessId: businessId,
+		UserId:     userId,
+	}
+
+	posts, err := h.GetPosts(r.Context(), session, &params)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(posts)
+	return nil
 }
 
 func (h *BusinessHandler) handleGetActivePosts(w http.ResponseWriter, r *http.Request) error {
