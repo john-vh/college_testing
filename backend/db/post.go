@@ -38,12 +38,15 @@ func (pq *PgxQueries) GetPosts(ctx context.Context, params *models.PostQueryPara
 func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {
 	rows, err := pq.tx.Query(ctx, `
     INSERT INTO posts 
-    (business_id, title, description) VALUES (@businessId, @title, @description)
+    (business_id, title, description, pay, time_est) 
+    VALUES (@businessId, @title, @description, @pay, @timeEst)
     RETURNING posts.*
     `, pgx.NamedArgs{
 		"businessId":  businessId,
 		"title":       data.Title,
 		"description": data.Desc,
+		"pay":         data.Pay,
+		"timeEst":     data.TimeEst,
 	})
 
 	if err != nil {
@@ -61,13 +64,15 @@ func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, dat
 func (pq *PgxQueries) UpdatePost(ctx context.Context, businessId *uuid.UUID, postId int, data *models.PostUpdate) error {
 	res, err := pq.tx.Exec(ctx, `
     UPDATE posts SET
-    (title, description, updated_at) = (@title, @description, NOW())
+    (title, description, pay, time_est, updated_at) = (@title, @description, @pay, @time_est, NOW())
     WHERE posts.id = @postId AND posts.business_id = @businessId
     `, pgx.NamedArgs{
 		"businessId":  businessId,
 		"postId":      postId,
 		"title":       data.Title,
 		"description": data.Desc,
+		"pay":         data.Pay,
+		"timeEst":     data.TimeEst,
 	})
 
 	if err != nil {
@@ -153,7 +158,10 @@ func (pq *PgxQueries) GetUserApplications(ctx context.Context, params *models.Us
         'id', posts.id,
         'title', posts.title,
         'status', posts.status,
-        'created_at', businesses.created_at
+        'pay', posts.pay,
+        'time_est', posts.time_est,
+        'created_at', posts.created_at,
+        'updated_at', posts.updated_at
     ) AS post,
       json_build_object(
         'id', businesses.id,

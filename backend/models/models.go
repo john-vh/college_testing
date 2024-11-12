@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"reflect"
 	"strings"
@@ -26,6 +27,8 @@ func init() {
 		}
 		return name
 	})
+
+	Validate.RegisterValidation("usd", validateUSD)
 }
 
 func ValidateData(data interface{}) error {
@@ -45,6 +48,14 @@ func ValidateData(data interface{}) error {
 	}
 
 	return nil
+}
+
+func validateUSD(fl validator.FieldLevel) bool {
+	if !fl.Field().CanFloat() || !fl.Field().CanSet() {
+		return false
+	}
+	fl.Field().SetFloat(math.Round(fl.Field().Float()*100) / 100)
+	return true
 }
 
 func ReadRequestJson(r *http.Request, dest interface{}) error {

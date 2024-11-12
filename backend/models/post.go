@@ -7,8 +7,10 @@ import (
 )
 
 type PostUpdate struct {
-	Title string `json:"title" db:"title" validate:"required,min=8,max=256"`
-	Desc  string `json:"desc" db:"description" validate:"required,min=8,max=256"`
+	Title   string  `json:"title" db:"title" validate:"required,min=8,max=256"`
+	Desc    string  `json:"desc" db:"description" validate:"required,min=8,max=256"`
+	Pay     float32 `json:"pay" db:"pay" validate:"required,gt=0,usd"`
+	TimeEst int     `json:"time_est" db:"time_est" validate:"required,gt=0"`
 }
 
 type PostStatus string
@@ -27,6 +29,9 @@ type PostOverview struct {
 	Id        int        `json:"id" db:"id"`
 	Title     string     `json:"title" db:"title"`
 	Status    PostStatus `json:"status" db:"status"`
+	Pay       float32    `json:"pay" db:"pay"`
+	TimeEst   int        `json:"time_est" db:"time_est"`
+	UpdatedAt time.Time  `json:"updated_at" db:"updated_at"`
 	CreatedAt time.Time  `json:"created_at" db:"created_at"`
 }
 
