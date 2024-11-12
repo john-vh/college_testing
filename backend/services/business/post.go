@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/db"
 	"github.com/john-vh/college_testing/backend/models"
+	"github.com/john-vh/college_testing/backend/services"
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
@@ -58,7 +59,7 @@ func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Sess
 }
 
 func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, status models.PostStatus) error {
-	h.logger.Debug("Setting post status", "Business Id", businessId, "Post Id", postId, "status", status.String())
+	h.logger.Debug("Setting post status", "Business Id", businessId, "Post Id", postId, "status", status)
 	// TODO: Authorize session to modify post
 
 	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
@@ -89,7 +90,7 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 }
 
 func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
-	h.logger.Debug("Retrieving applications", "Business Id", businessId, "Post Id", postId)
+	h.logger.Debug("Retrieving post applications", "Business Id", businessId, "Post Id", postId)
 	// TODO: Authorize session to get applications
 
 	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.PostApplications, error) {
@@ -101,5 +102,29 @@ func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sess
 	}
 
 	h.logger.Debug("Retrieved applications", "Business Id", businessId, "Post Id", postId)
+	return applications, nil
+}
+
+func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sessions.Session, params *models.UserApplicationQueryParams) ([]models.UserApplication, error) {
+	h.logger.Debug("Retreiving user applications.")
+	// TODO: Authorize session to get posts
+	// Need to consider params
+	userId := session.GetUserId()
+	if userId == nil {
+		return nil, services.NewUnauthenticatedServiceError(nil)
+	}
+
+	if params == nil {
+		params = &models.UserApplicationQueryParams{}
+	}
+
+	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.UserApplication, error) {
+		return pq.GetUserApplications(ctx, params)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return applications, nil
 }

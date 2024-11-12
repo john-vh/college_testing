@@ -1,61 +1,23 @@
 package models
 
 import (
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type UserStatus int
+type UserStatus string
 
 const (
-	USER_STATUS_ACTIVE UserStatus = iota
-	USER_STATUS_BANNED
-	USER_STATUS_DISABLED
+	USER_STATUS_ACTIVE   UserStatus = "active"
+	USER_STATUS_BANNED   UserStatus = "banned"
+	USER_STATUS_DISABLED UserStatus = "disabled"
 )
 
-func (us UserStatus) String() string {
-	switch us {
-	case USER_STATUS_ACTIVE:
-		return "active"
-	case USER_STATUS_BANNED:
-		return "banned"
-	case USER_STATUS_DISABLED:
-		return "disabled"
-	default:
-		return "unknown"
-	}
-}
-
-func (role *UserStatus) ScanText(value pgtype.Text) error {
-	switch value.String {
-	case "active":
-		*role = USER_STATUS_ACTIVE
-		return nil
-	case "banned":
-		*role = USER_STATUS_BANNED
-		return nil
-	case "disabled":
-		*role = USER_STATUS_DISABLED
-		return nil
-	default:
-		return errors.New("Unsupported value scanning user status")
-	}
-}
-
-func (role UserStatus) TextValue() (pgtype.Text, error) {
-	val := pgtype.Text{}
-	err := val.Scan(role.String())
-	return val, err
-
-}
-
-type UserRole int
+type UserRole string
 
 const (
-	USER_ROLE_ADMIN UserRole = iota
+	USER_ROLE_ADMIN UserRole = "admin"
 )
 
 type acctInfo struct {

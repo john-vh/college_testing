@@ -141,3 +141,47 @@ func (pq *PgxQueries) GetApplicationsForPost(ctx context.Context, businessId *uu
 	}
 	return applications, nil
 }
+
+func (pq *PgxQueries) GetUserApplications(ctx context.Context, params *models.UserApplicationQueryParams) ([]models.UserApplication, error) {
+	if params == nil {
+		params = &models.UserApplicationQueryParams{}
+	}
+
+	rows, err := pq.tx.Query(ctx, `
+    SELECT post_applications.status, post_applications.created_at,
+      json_build_object(
+        'id', posts.id,
+        'title', posts.title,
+        'status', posts.status,
+        'created_at', businesses.created_at
+    ) AS post,
+      json_build_object(
+        'id', businesses.id,
+        'name', businesses.name,
+        'status', businesses.status,
+        'created_at', businesses.created_at
+    ) AS business
+    FROM post_applications
+    LEFT JOIN posts ON posts.id = post_applications.post_id AND posts.business_id = post_applications.business_id
+    LEFT JOIN businesses ON posts.business_id = businesses.id
+    WHERE (@userId::UUID IS NULL OR @userId = post_applications.user_id)
+    AND (@applicationStatus::post_application_status IS NULL OR @applicationStatus = post_applications.status)
+    AND (@postStatus::post_status IS NULL OR @postStatus = posts.status)
+    `, pgx.NamedArgs{
+		"userId":            params.UserId,
+		"applicationStatus": params.ApplicationStatus,
+		"postStatus":        params.PostStatus,
+	})
+
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	applications, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.UserApplication])
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return nil, handlePgxError(err)
+	}
+
+	return applications, nil
+}
