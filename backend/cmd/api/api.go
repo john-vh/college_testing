@@ -62,7 +62,13 @@ func (server *APIServer) Run() error {
 	userHandler := user.NewUserHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	userHandler.RegisterRoutes(router)
 
-	businessHandler := business.NewBusinessHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, mailClient, server.store)
+	businessHandler := business.NewBusinessHandler(
+		slog.Default(),
+		services.HandleHTTPError,
+		sessionsHandler,
+		userHandler,
+		mailClient,
+		server.store)
 	businessHandler.RegisterRoutes(router)
 
 	return http.ListenAndServe(server.addr, services.CORSMiddleware(router))

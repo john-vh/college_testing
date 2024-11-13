@@ -77,6 +77,10 @@ func NewNotFoundServiceError(err error) *ServiceError {
 	return NewServiceError(err, http.StatusNotFound, nil)
 }
 
+func NewBadRequestServiceError(err error) *ServiceError {
+	return NewServiceError(err, http.StatusBadRequest, nil)
+}
+
 func NewValidationServiceError(err error, data ValidationErrMap) *ServiceError {
 	return NewServiceError(err, http.StatusBadRequest, data)
 }

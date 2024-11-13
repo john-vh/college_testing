@@ -41,7 +41,7 @@ func (auth *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) err
 	setCallbackCookie(w, "state", state)
 	setCallbackCookie(w, "nonce", nonce)
 	setCallbackCookie(w, "redirect", redirect)
-	http.Redirect(w, r, client.config.AuthCodeURL(state, oidc.Nonce(nonce)), http.StatusFound)
+	http.Redirect(w, r, client.config.AuthCodeURL(state, oidc.Nonce(nonce), oauth2.ApprovalForce), http.StatusFound)
 
 	return nil
 }
@@ -56,7 +56,7 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 	state, err := r.Cookie("state")
 	if err != nil || r.URL.Query().Get("state") != state.Value {
 		auth.logger.Debug("State did not match")
-		return services.NewInternalServiceError(err)
+		return services.NewBadRequestServiceError(err)
 	}
 
 	oauth2Token, err := client.config.Exchange(r.Context(), r.URL.Query().Get("code"))

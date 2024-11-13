@@ -35,15 +35,39 @@ func (pq *PgxQueries) GetPosts(ctx context.Context, params *models.PostQueryPara
 	return posts, nil
 }
 
+func (pq *PgxQueries) GetPostForId(ctx context.Context, businessId *uuid.UUID, postId int) (*models.Post, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT posts.*
+    FROM posts
+    WHERE posts.business_id = @businessId AND posts.id = @postId
+    `, pgx.NamedArgs{
+		"businessId": businessId,
+		"postId":     postId,
+	})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	post, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[models.Post])
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	return post, nil
+}
+
 func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {
 	rows, err := pq.tx.Query(ctx, `
     INSERT INTO posts 
-    (business_id, title, description) VALUES (@businessId, @title, @description)
+    (business_id, title, description, pay, time_est) 
+    VALUES (@businessId, @title, @description, @pay, @timeEst)
     RETURNING posts.*
     `, pgx.NamedArgs{
 		"businessId":  businessId,
 		"title":       data.Title,
 		"description": data.Desc,
+		"pay":         data.Pay,
+		"timeEst":     data.TimeEst,
 	})
 
 	if err != nil {
@@ -61,13 +85,15 @@ func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, dat
 func (pq *PgxQueries) UpdatePost(ctx context.Context, businessId *uuid.UUID, postId int, data *models.PostUpdate) error {
 	res, err := pq.tx.Exec(ctx, `
     UPDATE posts SET
-    (title, description, updated_at) = (@title, @description, NOW())
+    (title, description, pay, time_est, updated_at) = (@title, @description, @pay, @time_est, NOW())
     WHERE posts.id = @postId AND posts.business_id = @businessId
     `, pgx.NamedArgs{
 		"businessId":  businessId,
 		"postId":      postId,
 		"title":       data.Title,
 		"description": data.Desc,
+		"pay":         data.Pay,
+		"timeEst":     data.TimeEst,
 	})
 
 	if err != nil {
@@ -139,5 +165,52 @@ func (pq *PgxQueries) GetApplicationsForPost(ctx context.Context, businessId *uu
 		PostId:       postId,
 		Applications: data,
 	}
+	return applications, nil
+}
+
+func (pq *PgxQueries) GetUserApplications(ctx context.Context, params *models.UserApplicationQueryParams) ([]models.UserApplication, error) {
+	if params == nil {
+		params = &models.UserApplicationQueryParams{}
+	}
+
+	rows, err := pq.tx.Query(ctx, `
+    SELECT post_applications.status, post_applications.created_at,
+      json_build_object(
+        'id', posts.id,
+        'title', posts.title,
+        'status', posts.status,
+        'pay', posts.pay,
+        'time_est', posts.time_est,
+        'created_at', posts.created_at,
+        'updated_at', posts.updated_at
+    ) AS post,
+      json_build_object(
+        'id', businesses.id,
+        'name', businesses.name,
+        'status', businesses.status,
+        'created_at', businesses.created_at
+    ) AS business
+    FROM post_applications
+    LEFT JOIN posts ON posts.id = post_applications.post_id AND posts.business_id = post_applications.business_id
+    LEFT JOIN businesses ON posts.business_id = businesses.id
+    WHERE (@userId::UUID IS NULL OR @userId = post_applications.user_id)
+    AND (@applicationStatus::post_application_status IS NULL OR @applicationStatus = post_applications.status)
+    AND (@postStatus::post_status IS NULL OR @postStatus = posts.status)
+    `, pgx.NamedArgs{
+		"userId":            params.UserId,
+		"applicationStatus": params.ApplicationStatus,
+		"postStatus":        params.PostStatus,
+	})
+
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	applications, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.UserApplication])
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return nil, handlePgxError(err)
+	}
+
 	return applications, nil
 }
