@@ -33,12 +33,9 @@ func NewUserHandler(
 }
 
 func (h *UserHandler) GetUserById(ctx context.Context, session *sessions.Session, id *uuid.UUID) (*models.User, error) {
-	err := h.AuthorizeModifyUser(ctx, session, id)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := h.getUserById(ctx, id)
+	user, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.User, error) {
+		return h.AuthorizeModifyUser(ctx, pq, session, id)
+	})
 	if err != nil {
 		h.logger.Debug("Error getting user", "err", err)
 		return nil, err
@@ -47,30 +44,21 @@ func (h *UserHandler) GetUserById(ctx context.Context, session *sessions.Session
 	return user, nil
 }
 
-func (h *UserHandler) getUserById(ctx context.Context, id *uuid.UUID) (*models.User, error) {
-	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.User, error) {
-		return pq.GetUserForId(ctx, id)
-	})
-}
-
-func (h *UserHandler) AuthorizeModifyUser(ctx context.Context, session *sessions.Session, userId *uuid.UUID) (err error) {
+func (h *UserHandler) AuthorizeModifyUser(ctx context.Context, pq *db.PgxQueries, session *sessions.Session, userId *uuid.UUID) (*models.User, error) {
 	sUserId := session.GetUserId()
 	if sUserId == nil {
-		return services.NewUnauthorizedServiceError(nil)
+		return nil, services.NewUnauthenticatedServiceError(nil)
 	}
 
-	if *sUserId == *userId {
-		return nil
-	}
-
-	user, err := h.getUserById(ctx, userId)
+	user, err := pq.GetUserForId(ctx, userId)
 	if err != nil {
-		return err
+		// TODO: Handle database error
+		return nil, err
 	}
 
-	if user.HasRole(models.USER_ROLE_ADMIN) {
-		return nil
+	if *sUserId == *userId || user.HasRole(models.USER_ROLE_ADMIN) {
+		return user, nil
 	}
 
-	return services.NewUnauthorizedServiceError(nil)
+	return nil, services.NewUnauthorizedServiceError(nil)
 }

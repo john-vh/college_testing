@@ -50,15 +50,15 @@ func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Sessio
 
 func (h *BusinessHandler) CreatePost(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {
 	h.logger.Debug("Creating post", "Business Id", businessId)
-	if err := h.AuthorizeModifyBusiness(ctx, session, businessId); err != nil {
-		return nil, err
-	}
 
 	if err := models.ValidateData(data); err != nil {
 		return nil, err
 	}
 
 	post, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Post, error) {
+		if _, err := h.AuthorizeModifyBusiness(ctx, pq, session, businessId); err != nil {
+			return nil, err
+		}
 		return pq.CreatePost(ctx, businessId, data)
 	})
 
@@ -72,15 +72,10 @@ func (h *BusinessHandler) CreatePost(ctx context.Context, session *sessions.Sess
 
 func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, data *models.PostUpdate) error {
 	h.logger.Debug("Updating post", "Business Id", businessId, "Post Id", postId)
-	if err := h.AuthorizeModifyBusiness(ctx, session, businessId); err != nil {
-		return err
-	}
-
-	if err := models.ValidateData(data); err != nil {
-		return err
-	}
-
 	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		if _, err := h.AuthorizeModifyBusiness(ctx, pq, session, businessId); err != nil {
+			return err
+		}
 		return pq.UpdatePost(ctx, businessId, postId, data)
 	})
 	if err != nil {
@@ -93,11 +88,10 @@ func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Sess
 
 func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, status models.PostStatus) error {
 	h.logger.Debug("Setting post status", "Business Id", businessId, "Post Id", postId, "status", status)
-	if err := h.AuthorizeModifyBusiness(ctx, session, businessId); err != nil {
-		return err
-	}
-
 	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		if _, err := h.AuthorizeModifyBusiness(ctx, pq, session, businessId); err != nil {
+			return err
+		}
 		return pq.SetPostStatus(ctx, businessId, postId, status)
 	})
 	if err != nil {
@@ -110,12 +104,12 @@ func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.S
 
 func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, userId *uuid.UUID) error {
 	h.logger.Debug("Creating application", "Business Id", businessId, "Post Id", postId, "User Id", userId)
-	if err := h.users.AuthorizeModifyUser(ctx, session, userId); err != nil {
-		return err
-	}
 
 	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
-		user, err := pq.GetUserForId(ctx, userId)
+		user, err := h.users.AuthorizeModifyUser(ctx, pq, session, userId)
+		if err != nil {
+			return err
+		}
 		if !user.IsStudent() {
 			return services.NewDataConflictServiceError(err, "User is not a student")
 		}
@@ -140,11 +134,10 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 
 func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
 	h.logger.Debug("Retrieving post applications", "Business Id", businessId, "Post Id", postId)
-	if err := h.AuthorizeModifyBusiness(ctx, session, businessId); err != nil {
-		return nil, err
-	}
-
 	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.PostApplications, error) {
+		if _, err := h.AuthorizeModifyBusiness(ctx, pq, session, businessId); err != nil {
+			return nil, err
+		}
 		return pq.GetApplicationsForPost(ctx, businessId, postId)
 	})
 	if err != nil {
@@ -158,8 +151,6 @@ func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sess
 
 func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sessions.Session, params *models.UserApplicationQueryParams) ([]models.UserApplication, error) {
 	h.logger.Debug("Retreiving user applications.")
-	// TODO: Authorize session to get posts
-	// Need to consider params
 	userId := session.GetUserId()
 	if userId == nil {
 		return nil, services.NewUnauthenticatedServiceError(nil)
@@ -170,6 +161,16 @@ func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sess
 	}
 
 	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.UserApplication, error) {
+		if params.UserId == nil || *params.UserId != *userId {
+			user, err := pq.GetUserForId(ctx, params.UserId)
+			if err != nil {
+				return nil, err
+			}
+			if !user.HasRole(models.USER_ROLE_ADMIN) {
+				return nil, services.NewUnauthorizedServiceError(nil)
+			}
+		}
+
 		return pq.GetUserApplications(ctx, params)
 	})
 
