@@ -132,7 +132,7 @@ func (pq *PgxQueries) SetPostStatus(ctx context.Context, businessId *uuid.UUID, 
 
 func (pq *PgxQueries) GetApplicationsForPost(ctx context.Context, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
 	rows, err := pq.tx.Query(ctx, `
-    SELECT post_applications.notes, post_applications.status,
+    SELECT post_applications.notes, post_applications.status, post_applications.created_at,
       json_build_object(
       'id', users.id,
       'created_at', users.created_at,
