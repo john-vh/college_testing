@@ -1,0 +1,3 @@
+ALTER TABLE posts
+DROP COLUMN pay, 
+DROP COLUMN time_est;
