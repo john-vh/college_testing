@@ -35,6 +35,27 @@ func (pq *PgxQueries) GetPosts(ctx context.Context, params *models.PostQueryPara
 	return posts, nil
 }
 
+func (pq *PgxQueries) GetPostForId(ctx context.Context, businessId *uuid.UUID, postId int) (*models.Post, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT posts.*
+    FROM posts
+    WHERE posts.business_id = @businessId AND posts.id = @postId
+    `, pgx.NamedArgs{
+		"businessId": businessId,
+		"postId":     postId,
+	})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	post, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[models.Post])
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	return post, nil
+}
+
 func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, data *models.PostCreate) (*models.Post, error) {
 	rows, err := pq.tx.Query(ctx, `
     INSERT INTO posts 

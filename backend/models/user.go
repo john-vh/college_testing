@@ -1,6 +1,8 @@
 package models
 
 import (
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,13 +44,26 @@ type UserOverview struct {
 	acctInfo
 }
 
+type UserAccount struct {
+	acctInfo
+	Provider string `json:"provider" db:"provider"`
+	// IsPrimary bool      `json:"is_primary" db:"is_primary"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
 type User struct {
 	UserOverview
-	Roles    []UserRole `json:"-" db:"roles" validate:"required,dive"`
-	Accounts []struct {
-		acctInfo
-		Provider string `json:"provider" db:"provider"`
-		// IsPrimary bool      `json:"is_primary" db:"is_primary"`
-		UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
-	} `json:"accounts" db:"accounts"`
+	Roles    []UserRole    `json:"-" db:"roles" validate:"required,dive"`
+	Accounts []UserAccount `json:"accounts" db:"accounts"`
+}
+
+func (u *User) HasRole(role UserRole) bool {
+	return slices.Contains(u.Roles, role)
+}
+
+func (u *User) IsStudent() bool {
+	// HACK: Need to improve student verification
+	return slices.ContainsFunc(u.Accounts, func(ua UserAccount) bool {
+		return strings.HasSuffix(ua.Email, ".edu")
+	})
 }
