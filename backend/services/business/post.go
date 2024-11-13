@@ -131,21 +131,47 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 
 	go func() {
 		user, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
-			user, err := pq.GetUserForId(context.TODO(), userId)
-			return user, err
+			return pq.GetUserForId(context.TODO(), userId)
 		})
 		if err != nil {
-			h.logger.Debug("failed to get user while sending email")
+			h.logger.Debug("Failed to get user while sending email")
+			return
+		}
+		post, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.Post, error) {
+			return pq.GetPostForId(context.TODO(), businessId, postId)
+		})
+		if err != nil {
+			h.logger.Debug("Failed to get post while sending email")
+			return
+		}
+		owner, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
+			return pq.GetBusinessOwner(context.TODO(), businessId)
+		})
+		if err != nil {
+			h.logger.Debug("Failed to get post owner while sending email")
 			return
 		}
 
-		email := &notifications.MailInfo{
+		applicantEmail := &notifications.MailInfo{
 			ToList:  []string{user.Email},
-			Subject: "Application Received",
+			Subject: fmt.Sprintf("Application Received - %v", post.Title),
 			Body: fmt.Sprintf(
-				`Hi %v!\n
-        This is a confirmation email for applying! Expect to hear back from them soon.
-        `, user.Name),
+				"Hi %v!\n"+
+					"Thank you for applying to \"%v\"! You should expect to hear back about scheduling the test soon.",
+				user.Name, post.Title),
+		}
+		err = h.notifications.SendMsg(applicantEmail.ToList, applicantEmail)
+		if err != nil {
+			h.logger.Debug("Failed to send application confirmation email")
+		}
+
+		email := &notifications.MailInfo{
+			ToList:  []string{owner.Email},
+			Subject: fmt.Sprintf("Application Received - %v", post.Title),
+			Body: fmt.Sprintf(
+				"Hi %v!\n"+
+					"%v has just applied to your your posting: \"%v\"",
+				owner.Name, user.Name, post.Title),
 		}
 		err = h.notifications.SendMsg(email.ToList, email)
 		if err != nil {
