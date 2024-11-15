@@ -20,6 +20,7 @@ type UserRole string
 
 const (
 	USER_ROLE_ADMIN UserRole = "admin"
+	USER_ROLE_USER  UserRole = "user"
 )
 
 type acctInfo struct {
@@ -53,7 +54,7 @@ type UserAccount struct {
 
 type User struct {
 	UserOverview
-	Roles    []UserRole    `json:"-" db:"roles" validate:"required,dive"`
+	Roles    []UserRole    `json:"roles" db:"roles" validate:"required,dive"`
 	Accounts []UserAccount `json:"accounts" db:"accounts"`
 }
 

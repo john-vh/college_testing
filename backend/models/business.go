@@ -34,7 +34,7 @@ type BusinessOverview struct {
 type Business struct {
 	BusinessCreate
 	Id        uuid.UUID      `json:"id" db:"id"`
-	UserId    uuid.UUID      `json:"-" db:"user_id"`
+	UserId    uuid.UUID      `json:"user_id" db:"user_id"`
 	Status    BusinessStatus `json:"status" db:"status"`
 	CreatedAt time.Time      `json:"created_at" db:"created_at"`
 }
