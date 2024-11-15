@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/db"
@@ -60,6 +61,71 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 
 	h.logger.Debug("Created application", "Business Id", businessId, "Post Id", postId, "User Id", userId)
 	return nil
+}
+
+func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, userId *uuid.UUID, status models.ApplicationStatus) error {
+	h.logger.Debug("Setting application status", "business", businessId, "post", postId, "user", userId)
+	sessionUserId := session.GetUserId()
+	if sessionUserId == nil {
+		return services.NewUnauthenticatedServiceError(nil)
+	}
+
+	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		sessionUser, err := pq.GetUserForId(ctx, sessionUserId)
+		if err != nil {
+			return services.NewUnauthorizedServiceError(err)
+		}
+		business, err := pq.GetBusinessForId(ctx, businessId)
+		if err != nil {
+			return err
+		}
+		application, err := pq.GetApplication(ctx, businessId, postId, userId)
+		if err != nil {
+			return err
+		}
+		targetUser, err := pq.GetUserForId(ctx, userId)
+		if err != nil {
+			return err
+		}
+
+		var action ApplicationAction
+		switch status {
+		case models.APPLICATION_STATUS_ACCEPTED:
+			action = APPLICATION_ACTION_ACCEPT
+			if application.Status != models.APPLICATION_STATUS_PENDING {
+				return services.NewDataConflictServiceError(nil, "Can not accept non-pending application")
+			}
+		case models.APPLICATION_STATUS_REJECTED:
+			action = APPLICATION_ACTION_REJECT
+			if application.Status != models.APPLICATION_STATUS_PENDING {
+				return services.NewDataConflictServiceError(nil, "Can not reject non-pending application")
+			}
+		case models.APPLICATION_STATUS_COMPLETED:
+			action = APPLICATION_ACTION_COMPLETE
+			if !(application.Status == models.APPLICATION_STATUS_ACCEPTED || application.Status == models.APPLICATION_STATUS_INCOMPLETE) {
+				return services.NewDataConflictServiceError(nil, "Can not complete non-accepted application")
+			}
+		case models.APPLICATION_STATUS_INCOMPLETE:
+			action = APPLICATION_ACTION_INCOMPLETE
+			if application.Status != models.APPLICATION_STATUS_ACCEPTED {
+				return services.NewDataConflictServiceError(nil, "Can not mark non-accepted application incomplete")
+			}
+		case models.APPLICATION_STATUS_WITHDRAWN:
+			action = APPLICATION_ACTION_WITHDRAW
+			if !(application.Status == models.APPLICATION_STATUS_ACCEPTED || application.Status == models.APPLICATION_STATUS_PENDING) {
+				return services.NewDataConflictServiceError(nil, "Can only withdraw pending and accepted applications.")
+			}
+		default:
+			return services.NewBadRequestServiceError(fmt.Errorf("Invalid application status"))
+		}
+
+		if err := AuthorizeApplicationAction(sessionUser, action, business, targetUser, application, nil); err != nil {
+			return err
+		}
+
+		return pq.SetApplicationStatus(ctx, businessId, postId, userId, status)
+
+	})
 }
 
 func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
@@ -126,9 +192,14 @@ func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sess
 type ApplicationAction string
 
 const (
-	APPLICATION_ACTION_CREATE    ApplicationAction = "application:create"
-	APPLICATION_ACTION_READ_USER ApplicationAction = "application:read_user"
-	APPLICATION_ACTION_READ      ApplicationAction = "application:read"
+	APPLICATION_ACTION_CREATE     ApplicationAction = "application:create"
+	APPLICATION_ACTION_READ_USER  ApplicationAction = "application:read_user"
+	APPLICATION_ACTION_READ       ApplicationAction = "application:read"
+	APPLICATION_ACTION_REJECT     ApplicationAction = "application:reject"
+	APPLICATION_ACTION_ACCEPT     ApplicationAction = "application:accept"
+	APPLICATION_ACTION_COMPLETE   ApplicationAction = "application:complete"
+	APPLICATION_ACTION_INCOMPLETE ApplicationAction = "application:incomplete"
+	APPLICATION_ACTION_WITHDRAW   ApplicationAction = "application:withdraw"
 )
 
 func AuthorizeApplicationAction(user *models.User, action ApplicationAction, business *models.Business, targetUser *models.User, application *models.UserApplication, query *models.UserApplicationQueryParams) error {
@@ -146,6 +217,16 @@ func AuthorizeApplicationAction(user *models.User, action ApplicationAction, bus
 				return nil
 			case APPLICATION_ACTION_READ:
 				return nil
+			case APPLICATION_ACTION_ACCEPT:
+				return nil
+			case APPLICATION_ACTION_REJECT:
+				return nil
+			case APPLICATION_ACTION_COMPLETE:
+				return nil
+			case APPLICATION_ACTION_INCOMPLETE:
+				return nil
+			case APPLICATION_ACTION_WITHDRAW:
+				return nil
 			}
 		case models.USER_ROLE_USER:
 			switch action {
@@ -159,6 +240,26 @@ func AuthorizeApplicationAction(user *models.User, action ApplicationAction, bus
 				}
 			case APPLICATION_ACTION_READ:
 				if business != nil && business.UserId == user.Id {
+					return nil
+				}
+			case APPLICATION_ACTION_ACCEPT:
+				if business != nil && business.UserId == user.Id {
+					return nil
+				}
+			case APPLICATION_ACTION_REJECT:
+				if business != nil && business.UserId == user.Id {
+					return nil
+				}
+			case APPLICATION_ACTION_COMPLETE:
+				if business != nil && business.UserId == user.Id {
+					return nil
+				}
+			case APPLICATION_ACTION_INCOMPLETE:
+				if business != nil && business.UserId == user.Id {
+					return nil
+				}
+			case APPLICATION_ACTION_WITHDRAW:
+				if targetUser != nil && targetUser.Id == user.Id {
 					return nil
 				}
 			}

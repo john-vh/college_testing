@@ -53,11 +53,12 @@ type PostQueryParams struct {
 type ApplicationStatus string
 
 const (
-	APPLICATION_STATUS_PENDING   ApplicationStatus = "pending"
-	APPLICATION_STATUS_ACCEPTED  ApplicationStatus = "accepted"
-	APPLICATION_STATUS_REJECTED  ApplicationStatus = "rejected"
-	APPLICATION_STATUS_WITHDRAWN ApplicationStatus = "withdrawn"
-	APPLICATION_STATUS_COMPLETED ApplicationStatus = "completed"
+	APPLICATION_STATUS_PENDING    ApplicationStatus = "pending"
+	APPLICATION_STATUS_ACCEPTED   ApplicationStatus = "accepted"
+	APPLICATION_STATUS_REJECTED   ApplicationStatus = "rejected"
+	APPLICATION_STATUS_WITHDRAWN  ApplicationStatus = "withdrawn"
+	APPLICATION_STATUS_COMPLETED  ApplicationStatus = "completed"
+	APPLICATION_STATUS_INCOMPLETE ApplicationStatus = "incompleted"
 )
 
 type PostApplicationData struct {
