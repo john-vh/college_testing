@@ -18,10 +18,12 @@ func (pq *PgxQueries) GetPosts(ctx context.Context, params *models.PostQueryPara
     WHERE (@status::post_status IS NULL OR @status::post_status = posts.status)
     AND (@businessId::UUID IS NULL OR @businessId::UUID = posts.business_id)
     AND (@userId::UUID IS NULL OR @userId::UUID = users.id)
+    AND businesses.status = @businessActive
     `, pgx.NamedArgs{
-		"status":     params.Status,
-		"businessId": params.BusinessId,
-		"userId":     params.UserId,
+		"status":         params.Status,
+		"businessId":     params.BusinessId,
+		"userId":         params.UserId,
+		"businessActive": models.BUSINESS_STATUS_ACTIVE,
 	})
 	if err != nil {
 		return nil, handlePgxError(err)
