@@ -4,9 +4,11 @@ import React, { useEffect } from "react";
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { InfoPage, PageTag } from "../components/InfoPage.tsx";
 import { Sidebar } from "../components/Sidebar.tsx";
+import { useIsFounder } from "../hooks/useBusinessInfo.ts";
 
 export const Account = () => {
     const [currentPage, setCurrentPage] = React.useState<PageTag>(PageTag.Account);
+    const isFounder = useIsFounder();
     const handlePageChange = (page: PageTag) => {
         setCurrentPage(page);
     };
@@ -15,7 +17,7 @@ export const Account = () => {
         <div>
             <LandingNavbar showAccount={false} />
             <div className='App'>
-                <Sidebar handlePageChange={handlePageChange} />
+                <Sidebar isFounder={isFounder} handlePageChange={handlePageChange} />
                 <InfoPage page={currentPage} />
             </div>
         </div>

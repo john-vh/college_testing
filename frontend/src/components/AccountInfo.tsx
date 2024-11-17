@@ -14,11 +14,11 @@ export const AccountInfo = () => {
                     <H3>Account Information</H3>
                     <FormGroup label="Name"
                         labelFor="name" >
-                        <InputGroup id="name" placeholder={data.name} />
+                        <InputGroup id="name" defaultValue={data.name} />
                     </FormGroup>
                     <FormGroup label="Email"
                         labelFor="email" >
-                        <InputGroup id="email" placeholder={data.email} />
+                        <InputGroup id="email" defaultValue={data.email} />
                     </FormGroup>
                     <Button>Save changes</Button>
                 </Card>

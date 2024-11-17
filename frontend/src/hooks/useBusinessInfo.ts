@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface BusinessInfo {
     id: string,
@@ -29,4 +29,13 @@ export function useBusinessInfo(): BusinessInfo[] {
     }, []); // Empty dependency array ensures this runs only once
 
     return businessInfo;
+}
+
+export function useIsFounder() {
+    const businessInfo = useBusinessInfo();
+
+    // Memoize the check whether the list is empty or not
+    const isFounder = useMemo(() => businessInfo.length > 0, [businessInfo]);
+
+    return isFounder;
 }
