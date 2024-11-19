@@ -1,5 +1,5 @@
-import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, Divider } from "@blueprintjs/core";
-import React, { useState } from 'react';
+import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, InputGroup } from "@blueprintjs/core";
+import React, { useState, useMemo } from 'react';
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { useNavigate } from 'react-router-dom';
 import useAllPostings from '../hooks/useAllPostings.ts';
@@ -19,15 +19,30 @@ export const Landing = () => {
 
 const TestList = () => {
     const posts = useAllPostings();
-    //const items = useAllPostings();
 
     const navigate = useNavigate();
     const handleClick = (id) => { navigate(`/posting/${id}`); };
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredPosts = useMemo(() => {
+        return posts?.filter(post =>
+            post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            post.desc.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [posts, searchQuery]);
 
     if (posts != null) {
         return (
             <div className='Test-list'>
-                {posts.map((post, index) => (
+                <div style={{ position: "absolute" }}>
+                    <InputGroup
+                        placeholder="Search..."
+                        type="search"
+                        value={searchQuery}
+                        onValueChange={(value) => setSearchQuery(value)}
+                    />
+                </div>
+                <div style={{ paddingBottom: "50px" }} />
+                {filteredPosts != null && filteredPosts.map((post, index) => (
                     <div className='Card'>
                         <Card interactive={true} >
                             <div className='Flex'>
