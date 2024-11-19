@@ -1,38 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { usePostingIds } from './usePostingIds.ts';
+import { AccountInfo } from './useAccountInfo.ts';
 
-interface ApplicationInfo {
-    id: string,
-    status: number,
-    title: string,
-    desc: string,
+export interface ApplicationInfo {
+    user: AccountInfo,
+    notes: string,
+    status: number
+}
+
+export interface PostingApplicationInfo {
     business_id: string,
-    created_at: string,
-    updated_at?: string,
+    post_id: number,
+    applications: ApplicationInfo[]
 }
 
-interface ApplicationInfoProps {
-    business_ids: string[]
-}
-
-export function useApplicationInfo({ business_ids }: ApplicationInfoProps): ApplicationInfo[] {
-    const [applicationInfo, setApplicationInfo] = useState<ApplicationInfo[]>([]);
+export function useApplicationInfo(): PostingApplicationInfo[] {
+    const [applicationInfo, setApplicationInfo] = useState<PostingApplicationInfo[]>([]);
+    const post_ids = usePostingIds();
 
     useEffect(() => {
         async function fetchData() {
-            for (const business_id in business_ids) {
+            const allData: PostingApplicationInfo[] = [];
+            for (const [business_id, post_id] of post_ids) {
                 try {
-                    const response = await fetch(`http://127.0.0.1:8080/businesses/${business_id}/posts/1/applications`, { mode: "cors", credentials: 'include' });
+                    const response = await fetch(`http://127.0.0.1:8080/businesses/${business_id}/posts/${post_id}/applications`, { mode: "cors", credentials: 'include' });
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    setApplicationInfo([...applicationInfo, await response.json()]);
+                    allData.push(await response.json());
                 } catch (error) {
                     console.log(error);
                 }
             }
+            setApplicationInfo(allData);
         }
         fetchData();
-    }, [applicationInfo, business_ids]); // Empty dependency array ensures this runs only once
+    }, [post_ids]); // Empty dependency array ensures this runs only once
 
     return applicationInfo;
 }
