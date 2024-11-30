@@ -3,6 +3,13 @@ import { useBusinessInfo } from './useBusinessInfo.ts';
 import { usePostingInfo } from './usePostingInfo.ts';
 
 export function usePostingIds(): [string, number][] {
-    const postingInfo = usePostingInfo();
-    return useMemo(() => postingInfo.map((posting) => [posting.business_id, posting.id]), [postingInfo]);
+    const { data } = usePostingInfo();
+    return useMemo(() => data.map((posting) => [posting.business_id, posting.id]), [data]);
+}
+
+export function usePostingNames(): Map<number, string> {
+    const { data } = usePostingInfo();
+    const hashmap = new Map<number, string>();
+    data.map((posting) => hashmap.set(posting.id, posting.title));
+    return hashmap;
 }

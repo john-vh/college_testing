@@ -19,7 +19,7 @@ export const BusinessInfo = () => {
     }
 
     return (
-        <div style={{ width: '100%', padding: '20px' }}>
+        <div style={{ width: '100%', padding: '20px', marginLeft: "200px" }}>
             <Button
                 intent="primary"
                 large={true}

@@ -2,7 +2,7 @@ import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading
 import React, { useState, useMemo } from 'react';
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { useNavigate } from 'react-router-dom';
-import useAllPostings from '../hooks/useAllPostings.ts';
+import useAllPostings, { PostingInfo } from '../hooks/useAllPostings.ts';
 
 export const Landing = () => {
     return (
@@ -19,9 +19,11 @@ export const Landing = () => {
 
 const TestList = () => {
     const posts = useAllPostings();
-
     const navigate = useNavigate();
-    const handleClick = (id) => { navigate(`/posting/${id}`); };
+
+    const handleClick = (post: PostingInfo) => {
+        navigate(`/posting/${post.id}`, { state: { post } });
+    };
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredPosts = useMemo(() => {
@@ -57,7 +59,7 @@ const TestList = () => {
                             <p className="bp5-text-muted">{post.desc}</p>
                             <div className='Flex align-right'>
                                 <div className="gap">Compensation: $5</div>
-                                <Button intent="primary" onClick={() => handleClick(post.id)}>Details</Button>
+                                <Button intent="primary" onClick={() => handleClick(post)}>Details</Button>
                             </div>
                         </Card>
                     </div>

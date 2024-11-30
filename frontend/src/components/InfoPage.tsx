@@ -1,6 +1,6 @@
 import React from "react";
 import AccountInfo from "./AccountInfo.tsx";
-import { PostingInfo } from "./PostingInfo.tsx";
+import { PostingInfoPage } from "./PostingInfo.tsx";
 import { BusinessInfo } from "./BusinessInfo.tsx";
 import { ApplicationInfo } from "./ApplicationInfo.tsx";
 
@@ -36,7 +36,7 @@ export const InfoPage = ({ page }: InfoPageProps) => {
             );
         case PageTag.Postings:
             return (
-                <PostingInfo />
+                <PostingInfoPage />
             );
         default:
             return (

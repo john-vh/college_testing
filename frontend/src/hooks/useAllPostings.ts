@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 
-interface PostingInfo {
+export interface PostingInfo {
     id: number,
-    business_id: number,
+    business_id: string,
     created_at: string,
     updated_at: string,
-    status: number,
+    status: string,
     title: string,
-    desc: string
+    desc: string,
+    pay: number,
+    time_est: number
 }
 
 function useAllPostings(): PostingInfo[] | null {
