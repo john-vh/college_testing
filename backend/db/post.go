@@ -140,10 +140,11 @@ func (pq *PgxQueries) GetApplicationsForPost(ctx context.Context, businessId *uu
       'created_at', users.created_at,
       'email', accounts.email,
       'name', accounts.name,
-      'email_verified', accounts.email_verified
+      'email_verified', accounts.email_verified,
+      'status', users.status
     ) AS user
     FROM post_applications
-    LEFT JOIN users on post_applications.user_id = users.id
+    LEFT JOIN users on post_applications.user_id = users.id 
     LEFT JOIN user_accounts ON users.id = user_accounts.user_id
     LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id
     WHERE post_applications.business_id = @businessId AND post_applications.post_id = @postId AND user_accounts.is_primary = TRUE
