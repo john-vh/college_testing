@@ -104,7 +104,11 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 		userId = session.GetUserId()
 	}
 
-	if userId != nil {
+	linkedUser, err := auth.GetLinkedUser(r.Context(), provider, &claims)
+	if err != nil {
+		return err
+	}
+	if userId != nil && (linkedUser == nil || *userId == *linkedUser) {
 		auth.logger.Debug("UserId is not nil", "user_id", userId)
 		err := auth.LinkAccount(context.TODO(), userId, provider, &claims)
 		if err != nil {
