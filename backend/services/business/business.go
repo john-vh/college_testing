@@ -2,7 +2,7 @@ package business
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -42,18 +42,36 @@ func NewBusinessHandler(
 }
 
 func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions.Session, ownerId *uuid.UUID, data *models.BusinessCreate) (*models.Business, error) {
+	userId := session.GetUserId()
+	if userId == nil {
+		return nil, services.NewUnauthenticatedServiceError(nil)
+	}
+
 	err := models.ValidateData(data)
 	if err != nil {
 		return nil, err
 	}
 
 	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Business, error) {
-		_, err := h.users.AuthorizeModifyUser(ctx, pq, session, ownerId)
+		user, err := pq.GetUserForId(ctx, userId)
+		if err != nil {
+			return nil, services.NewUnauthenticatedServiceError(err)
+		}
+
+		err = AuthorizeBusinessAction(user, BUSINESS_ACTION_CREATE, nil, nil)
 		if err != nil {
 			return nil, err
 		}
 
-		return pq.CreateBusiness(ctx, ownerId, data)
+		business, dberr := pq.CreateBusiness(ctx, ownerId, data)
+		if dberr != nil {
+			if errors.Is(dberr, db.ErrUnique) {
+				return nil, services.NewDataConflictServiceError(err, "Business must be unique")
+			}
+			return nil, err
+		}
+
+		return business, nil
 	})
 }
 
@@ -72,77 +90,131 @@ func (h *BusinessHandler) GetBusinesses(ctx context.Context, session *sessions.S
 		if err != nil {
 			return nil, services.NewUnauthenticatedServiceError(err)
 		}
-
-		if (params.Status == nil || *params.Status != models.BUSINESS_STATUS_ACTIVE) &&
-			!(user.HasRole(models.USER_ROLE_ADMIN) ||
-				(params.UserId != nil && *params.UserId == *userId)) {
-			return nil, services.NewUnauthorizedServiceError(fmt.Errorf("User attempted to retrieve non-active businesses"))
+		if err := AuthorizeBusinessAction(user, BUSINESS_ACTION_READ, nil, params); err != nil {
+			return nil, err
 		}
-
 		return pq.GetBusinesses(ctx, params)
 	})
 }
 
 func (h *BusinessHandler) UpdateBusiness(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, data *models.BusinessUpdate) error {
+	userId := session.GetUserId()
+	if userId == nil {
+		return services.NewUnauthenticatedServiceError(nil)
+	}
+
 	err := models.ValidateData(data)
 	if err != nil {
 		return err
 	}
 
 	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
-		_, err := h.AuthorizeModifyBusiness(ctx, pq, session, businessId)
+		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
+			return services.NewUnauthenticatedServiceError(err)
+		}
+		business, err := pq.GetBusinessForId(ctx, businessId)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
-		return pq.UpdateBusiness(ctx, businessId, data)
+		if err := AuthorizeBusinessAction(user, BUSINESS_ACTION_UPDATE, business, nil); err != nil {
+			return err
+		}
+		err = pq.UpdateBusiness(ctx, businessId, data)
+		if err != nil {
+			if errors.Is(err, db.ErrUnique) {
+				return services.NewDataConflictServiceError(err, "Business must be unique")
+			}
+			return err
+		}
+
+		return nil
 	})
 
 }
 
 func (h *BusinessHandler) ApproveBusiness(ctx context.Context, session *sessions.Session, businessId *uuid.UUID) error {
-	sUserId := session.GetUserId()
-	if sUserId == nil {
+	userId := session.GetUserId()
+	if userId == nil {
 		return services.NewUnauthenticatedServiceError(nil)
 	}
 
 	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
-		user, err := pq.GetUserForId(ctx, sUserId)
+		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
-
-		if !user.HasRole(models.USER_ROLE_ADMIN) {
-			return services.NewUnauthorizedServiceError(nil)
+		business, err := pq.GetBusinessForId(ctx, businessId)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
 		}
-
-		return pq.SetBusinessStatus(ctx, businessId, models.BUSINESS_STATUS_ACTIVE)
+		if err := AuthorizeBusinessAction(user, BUSINESS_ACTION_APPROVE, business, nil); err != nil {
+			return err
+		}
+		err = pq.SetBusinessStatus(ctx, businessId, models.BUSINESS_STATUS_ACTIVE)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
+		}
+		return nil
 	})
 }
 
-func (h *BusinessHandler) AuthorizeModifyBusiness(ctx context.Context, pq *db.PgxQueries, session *sessions.Session, businessId *uuid.UUID) (*models.User, error) {
-	userId := session.GetUserId()
-	if userId == nil {
-		return nil, services.NewUnauthorizedServiceError(nil)
+type BusinessAction string
+
+const (
+	BUSINESS_ACTION_CREATE  BusinessAction = "business:create"
+	BUSINESS_ACTION_UPDATE  BusinessAction = "business:update"
+	BUSINESS_ACTION_APPROVE BusinessAction = "business:approve"
+	BUSINESS_ACTION_READ    BusinessAction = "business:read"
+)
+
+func AuthorizeBusinessAction(user *models.User, action BusinessAction, data *models.Business, query *models.BusinessQueryParams) error {
+	if user == nil {
+		return services.NewUnauthenticatedServiceError(nil)
 	}
 
-	owner, err := pq.GetBusinessOwner(ctx, businessId)
-	if err != nil {
-		// TODO: Handle db error
-		return nil, err
+	for _, role := range user.Roles {
+		switch role {
+		case models.USER_ROLE_ADMIN:
+			switch action {
+			case BUSINESS_ACTION_CREATE:
+				return nil
+			case BUSINESS_ACTION_UPDATE:
+				return nil
+			case BUSINESS_ACTION_APPROVE:
+				return nil
+			case BUSINESS_ACTION_READ:
+				return nil
+			}
+		case models.USER_ROLE_USER:
+			switch action {
+			case BUSINESS_ACTION_CREATE:
+				return nil
+			case BUSINESS_ACTION_UPDATE:
+				if data != nil && data.UserId == user.Id {
+					return nil
+				}
+			case BUSINESS_ACTION_READ:
+				if query != nil &&
+					((query.UserId != nil && *query.UserId == user.Id) ||
+						(query.Status != nil && *query.Status == models.BUSINESS_STATUS_ACTIVE)) {
+					return nil
+				}
+			}
+		}
 	}
 
-	if owner.Id == *userId {
-		return owner, nil
-	}
-
-	user, err := pq.GetUserForId(ctx, userId)
-	if err != nil {
-		return nil, err
-	}
-
-	if user.HasRole(models.USER_ROLE_ADMIN) {
-		return user, nil
-	}
-
-	return nil, services.NewUnauthorizedServiceError(nil)
+	return services.NewUnauthorizedServiceError(nil)
 }

@@ -13,6 +13,7 @@ import (
 const (
 	businessIdParam = "businessId"
 	postIdParam     = "postId"
+	userIdParam     = "userId"
 )
 
 func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
@@ -22,9 +23,6 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("GET /posts", h.handleErr(h.handleGetActivePosts))
 
-	// DEPRECATED: Moved to /users/0/businesses
-	router.HandleFunc("POST /businesses", h.handleErr(h.handleRequestBusiness))
-
 	router.HandleFunc("GET /businesses", h.handleErr(h.handleGetBusinesses))
 	router.HandleFunc("GET /users/0/businesses", h.handleErr(h.handleGetUserBusinesses))
 	router.HandleFunc("GET /users/0/posts", h.handleErr(h.handleGetUserPosts))
@@ -33,12 +31,18 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts", h.handleErr(h.handleCreatePost))
-	router.HandleFunc("GET /businesses/{businessId}/posts", h.handleErr(h.handleGetBusinessPosts))
 	router.HandleFunc("PATCH /businesses/{businessId}/posts/{postId}", h.handleErr(h.handleUpdatePost))
 	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/activate", h.handleErr(h.handleActivatePost))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/deactivate", h.handleErr(h.handleDeactivatePost))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/archive", h.handleErr(h.handleArchivePost))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/apply", h.handleErr(h.handleApplyToPost))
 	router.HandleFunc("GET /businesses/{businessId}/posts/{postId}/applications", h.handleErr(h.handleGetPostApplications))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/applications/{userId}/accept", h.handleErr(h.handleAcceptApplication))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/applications/{userId}/reject", h.handleErr(h.handleRejectApplication))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/applications/{userId}/complete", h.handleErr(h.handleCompleteApplication))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/applications/{userId}/incomplete", h.handleErr(h.handleAbandonApplication))
+	router.HandleFunc("POST /businesses/{businessId}/posts/{postId}/applications/{userId}/withdraw", h.handleErr(h.handleWithdrawApplication))
 }
 
 func (h *BusinessHandler) handleQueryAllBusinesses(w http.ResponseWriter, r *http.Request) error {
@@ -325,31 +329,6 @@ func (h *BusinessHandler) handleCreatePost(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-func (h *BusinessHandler) handleGetBusinessPosts(w http.ResponseWriter, r *http.Request) error {
-	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
-	if err != nil {
-		return services.NewNotFoundServiceError(err)
-	}
-
-	session, err := h.sessions.GetSession(r)
-	if err != nil {
-		return err
-	}
-	params := models.PostQueryParams{
-		Status:     nil,
-		BusinessId: &businessId,
-	}
-
-	posts, err := h.GetPosts(r.Context(), session, &params)
-	if err != nil {
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(posts)
-	return nil
-}
-
 func (h *BusinessHandler) handleUpdatePost(w http.ResponseWriter, r *http.Request) error {
 	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
 	if err != nil {
@@ -379,28 +358,42 @@ func (h *BusinessHandler) handleUpdatePost(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
+func (h *BusinessHandler) handleSetPostStatus(status models.PostStatus) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+		if err != nil {
+			return services.NewNotFoundServiceError(err)
+		}
+
+		postId, err := strconv.Atoi(r.PathValue(postIdParam))
+		if err != nil {
+			return services.NewNotFoundServiceError(err)
+		}
+
+		session, err := h.sessions.GetSession(r)
+		if err != nil {
+			return err
+		}
+
+		err = h.SetPostStatus(r.Context(), session, &businessId, postId, status)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
 func (h *BusinessHandler) handleActivatePost(w http.ResponseWriter, r *http.Request) error {
-	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
-	if err != nil {
-		return services.NewNotFoundServiceError(err)
-	}
+	return h.handleSetPostStatus(models.POST_STATUS_ACTIVE)(w, r)
+}
 
-	postId, err := strconv.Atoi(r.PathValue(postIdParam))
-	if err != nil {
-		return services.NewNotFoundServiceError(err)
-	}
+func (h *BusinessHandler) handleDeactivatePost(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetPostStatus(models.POST_STATUS_DISABLED)(w, r)
+}
 
-	session, err := h.sessions.GetSession(r)
-	if err != nil {
-		return err
-	}
-
-	err = h.SetPostStatus(r.Context(), session, &businessId, postId, models.POST_STATUS_ACTIVE)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (h *BusinessHandler) handleArchivePost(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetPostStatus(models.POST_STATUS_ARCHIVED)(w, r)
 }
 
 func (h *BusinessHandler) handleApplyToPost(w http.ResponseWriter, r *http.Request) error {
@@ -454,4 +447,55 @@ func (h *BusinessHandler) handleGetPostApplications(w http.ResponseWriter, r *ht
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(applications)
 	return nil
+}
+
+func (h *BusinessHandler) handleSetApplicationStatus(status models.ApplicationStatus) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+		if err != nil {
+			return services.NewNotFoundServiceError(err)
+		}
+
+		postId, err := strconv.Atoi(r.PathValue(postIdParam))
+		if err != nil {
+			return services.NewNotFoundServiceError(err)
+		}
+
+		userId, err := uuid.Parse(r.PathValue(userIdParam))
+		if err != nil {
+			return services.NewNotFoundServiceError(err)
+		}
+
+		session, err := h.sessions.GetSession(r)
+		if err != nil {
+			return err
+		}
+
+		err = h.SetApplicationStatus(r.Context(), session, &businessId, postId, &userId, status)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+func (h *BusinessHandler) handleAcceptApplication(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_ACCEPTED)(w, r)
+}
+
+func (h *BusinessHandler) handleRejectApplication(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_REJECTED)(w, r)
+}
+
+func (h *BusinessHandler) handleCompleteApplication(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_COMPLETED)(w, r)
+}
+
+func (h *BusinessHandler) handleAbandonApplication(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_INCOMPLETE)(w, r)
+}
+
+func (h *BusinessHandler) handleWithdrawApplication(w http.ResponseWriter, r *http.Request) error {
+	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_WITHDRAWN)(w, r)
 }

@@ -18,10 +18,12 @@ func (pq *PgxQueries) GetPosts(ctx context.Context, params *models.PostQueryPara
     WHERE (@status::post_status IS NULL OR @status::post_status = posts.status)
     AND (@businessId::UUID IS NULL OR @businessId::UUID = posts.business_id)
     AND (@userId::UUID IS NULL OR @userId::UUID = users.id)
+    AND businesses.status = @businessActive
     `, pgx.NamedArgs{
-		"status":     params.Status,
-		"businessId": params.BusinessId,
-		"userId":     params.UserId,
+		"status":         params.Status,
+		"businessId":     params.BusinessId,
+		"userId":         params.UserId,
+		"businessActive": models.BUSINESS_STATUS_ACTIVE,
 	})
 	if err != nil {
 		return nil, handlePgxError(err)
@@ -132,16 +134,17 @@ func (pq *PgxQueries) SetPostStatus(ctx context.Context, businessId *uuid.UUID, 
 
 func (pq *PgxQueries) GetApplicationsForPost(ctx context.Context, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
 	rows, err := pq.tx.Query(ctx, `
-    SELECT post_applications.notes, post_applications.status,
+    SELECT post_applications.notes, post_applications.status, post_applications.created_at,
       json_build_object(
       'id', users.id,
       'created_at', users.created_at,
       'email', accounts.email,
       'name', accounts.name,
-      'email_verified', accounts.email_verified
+      'email_verified', accounts.email_verified,
+      'status', users.status
     ) AS user
     FROM post_applications
-    LEFT JOIN users on post_applications.user_id = users.id
+    LEFT JOIN users on post_applications.user_id = users.id 
     LEFT JOIN user_accounts ON users.id = user_accounts.user_id
     LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id
     WHERE post_applications.business_id = @businessId AND post_applications.post_id = @postId AND user_accounts.is_primary = TRUE

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 
-interface AccountInfo {
+export interface AccountInfo {
     id: string,
     created_at: string,
     status: number,
     email: string,
     name: string,
-    email_verified: boolean,
-    accounts: []
+    email_verified: boolean
 }
 
 function useAccountInfo(): AccountInfo | null {
