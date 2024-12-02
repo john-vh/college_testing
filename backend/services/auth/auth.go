@@ -100,6 +100,16 @@ func (auth *AuthHandler) SaveAccount(ctx context.Context, openidProvider string,
 	})
 }
 
+func (auth *AuthHandler) GetLinkedUser(ctx context.Context, openidProvider string, acctData *models.OpenIDClaims) (*uuid.UUID, error) {
+	return db.WithTxRet(ctx, auth.store, func(pq *db.PgxQueries) (*uuid.UUID, error) {
+		linkedUserId, err := pq.GetLinkedUserId(ctx, openidProvider, acctData.Id)
+		if err != nil {
+			return nil, err
+		}
+		return linkedUserId, nil
+	})
+}
+
 func (auth *AuthHandler) LinkAccount(ctx context.Context, userId *uuid.UUID, openidProvider string, acctData *models.OpenIDClaims) error {
 	auth.logger.Info("Auth linking account", "account_provider", openidProvider, "account_id", acctData.Id, "user_id", userId)
 	return db.WithTx(ctx, auth.store, func(pq *db.PgxQueries) error {
