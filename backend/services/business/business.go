@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -58,7 +59,15 @@ func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions
 			return nil, err
 		}
 
-		return pq.CreateBusiness(ctx, ownerId, data)
+		business, dberr := pq.CreateBusiness(ctx, ownerId, data)
+		if dberr != nil {
+			if errors.Is(dberr, db.ErrUnique) {
+				return nil, services.NewDataConflictServiceError(err, "Business must be unique")
+			}
+			return nil, err
+		}
+
+		return business, nil
 	})
 }
 
@@ -102,12 +111,23 @@ func (h *BusinessHandler) UpdateBusiness(ctx context.Context, session *sessions.
 		}
 		business, err := pq.GetBusinessForId(ctx, businessId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		if err := AuthorizeBusinessAction(user, BUSINESS_ACTION_UPDATE, business, nil); err != nil {
 			return err
 		}
-		return pq.UpdateBusiness(ctx, businessId, data)
+		err = pq.UpdateBusiness(ctx, businessId, data)
+		if err != nil {
+			if errors.Is(err, db.ErrUnique) {
+				return services.NewDataConflictServiceError(err, "Business must be unique")
+			}
+			return err
+		}
+
+		return nil
 	})
 
 }
@@ -121,16 +141,29 @@ func (h *BusinessHandler) ApproveBusiness(ctx context.Context, session *sessions
 	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		business, err := pq.GetBusinessForId(ctx, businessId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		if err := AuthorizeBusinessAction(user, BUSINESS_ACTION_APPROVE, business, nil); err != nil {
 			return err
 		}
-		return pq.SetBusinessStatus(ctx, businessId, models.BUSINESS_STATUS_ACTIVE)
+		err = pq.SetBusinessStatus(ctx, businessId, models.BUSINESS_STATUS_ACTIVE)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
+		}
+		return nil
 	})
 }
 

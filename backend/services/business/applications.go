@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -18,7 +19,7 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 		return services.NewUnauthenticatedServiceError(nil)
 	}
 
-	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		sessionUser, err := pq.GetUserForId(ctx, sessionUserId)
 		if err != nil {
 			return services.NewUnauthorizedServiceError(err)
@@ -26,6 +27,9 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 
 		business, err := pq.GetBusinessForId(ctx, businessId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		if business.Status != models.BUSINESS_STATUS_ACTIVE {
@@ -34,6 +38,9 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 
 		post, err := pq.GetPostForId(ctx, businessId, postId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		if post.Status != models.POST_STATUS_ACTIVE {
@@ -41,6 +48,9 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 		}
 		targetUser, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return nil
 		}
 
@@ -52,15 +62,15 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 			return services.NewDataConflictServiceError(err, "User is not a student")
 		}
 
-		return pq.CreateApplication(ctx, businessId, postId, userId)
+		err = pq.CreateApplication(ctx, businessId, postId, userId)
+		if err != nil {
+			if errors.Is(err, db.ErrUnique) {
+				return services.NewDataConflictServiceError(err, "Application already exists")
+			}
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		h.logger.Debug("Error creating application", "err", err)
-		return err
-	}
-
-	h.logger.Debug("Created application", "Business Id", businessId, "Post Id", postId, "User Id", userId)
-	return nil
 }
 
 func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, userId *uuid.UUID, status models.ApplicationStatus) error {
@@ -77,14 +87,23 @@ func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *ses
 		}
 		business, err := pq.GetBusinessForId(ctx, businessId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		application, err := pq.GetApplication(ctx, businessId, postId, userId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 		targetUser, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
 			return err
 		}
 
@@ -134,7 +153,7 @@ func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sess
 	if userId == nil {
 		return nil, services.NewUnauthenticatedServiceError(nil)
 	}
-	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.PostApplications, error) {
+	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.PostApplications, error) {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
 			return nil, services.NewUnauthorizedServiceError(err)
@@ -148,15 +167,15 @@ func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sess
 			return nil, err
 		}
 
-		return pq.GetApplicationsForPost(ctx, businessId, postId)
+		applications, err := pq.GetApplicationsForPost(ctx, businessId, postId)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return nil, services.NewNotFoundServiceError(err)
+			}
+			return nil, err
+		}
+		return applications, nil
 	})
-	if err != nil {
-		h.logger.Debug("Error retrieving applications", "err", err)
-		return nil, err
-	}
-
-	h.logger.Debug("Retrieved applications", "Business Id", businessId, "Post Id", postId)
-	return applications, nil
 }
 
 func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sessions.Session, params *models.UserApplicationQueryParams) ([]models.UserApplication, error) {
@@ -170,7 +189,7 @@ func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sess
 		params = &models.UserApplicationQueryParams{}
 	}
 
-	applications, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.UserApplication, error) {
+	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) ([]models.UserApplication, error) {
 		user, err := pq.GetUserForId(ctx, params.UserId)
 		if err != nil {
 			return nil, services.NewUnauthorizedServiceError(err)
@@ -179,14 +198,12 @@ func (h *BusinessHandler) GetUserApplications(ctx context.Context, session *sess
 			return nil, err
 		}
 
-		return pq.GetUserApplications(ctx, params)
+		applications, err := pq.GetUserApplications(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		return applications, nil
 	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return applications, nil
 }
 
 type ApplicationAction string
