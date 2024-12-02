@@ -60,6 +60,9 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 		}
 
 		if !targetUser.IsStudent() {
+			if targetUser.Id == sessionUser.Id {
+				return services.NewUnauthorizedServiceError(nil)
+			}
 			return services.NewDataConflictServiceError(err, "User is not a student")
 		}
 
