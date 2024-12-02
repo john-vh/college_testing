@@ -1,7 +1,6 @@
 .App {
   padding-top: 50px;
   display: flex;
-  height: 100vh;
 }
 
 .Card {
@@ -31,9 +30,18 @@
 
 .Filter-bar {
   padding: 10px;
+  position: fixed;
+  height: calc(100vh - 50px);
   background-color: #EDEFF2;
   width: 200px;
   transition: width 0.5s ease;
+}
+
+.side-bar {
+  padding: 10px;
+  background-color: #EDEFF2;
+  width: 200px;
+  height: 100vh;
 }
 
 .hover {
@@ -78,5 +86,9 @@
 
 .content {
   padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
   flex: 1;
+  flex-direction: column;
+  gap: 20px;
 }
