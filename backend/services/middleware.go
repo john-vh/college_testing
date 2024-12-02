@@ -1,6 +1,18 @@
 package services
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
+
+func RequestLoggerMiddleWare(logger *slog.Logger) func(next http.Handler) http.HandlerFunc {
+	return func(next http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			logger.Info("API Endpoint", "method", r.Method, "path", r.URL.Path)
+			next.ServeHTTP(w, r)
+		}
+	}
+}
 
 func CORSMiddleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -31,7 +31,6 @@ func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Sessio
 		if params.BusinessId != nil {
 			business, err = pq.GetBusinessForId(ctx, params.BusinessId)
 			if err != nil {
-				// HACK: Need to implement better error handling between service and db levels
 				business = nil
 			}
 		}
