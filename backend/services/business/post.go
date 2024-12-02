@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/db"
@@ -31,7 +32,6 @@ func (h *BusinessHandler) GetPosts(ctx context.Context, session *sessions.Sessio
 		if params.BusinessId != nil {
 			business, err = pq.GetBusinessForId(ctx, params.BusinessId)
 			if err != nil {
-				// HACK: Need to implement better error handling between service and db levels
 				business = nil
 			}
 		}
@@ -53,7 +53,7 @@ func (h *BusinessHandler) CreatePost(ctx context.Context, session *sessions.Sess
 	if err := models.ValidateData(data); err != nil {
 		return nil, err
 	}
-	post, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Post, error) {
+	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Post, error) {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
 			return nil, services.NewUnauthorizedServiceError(err)
@@ -71,15 +71,15 @@ func (h *BusinessHandler) CreatePost(ctx context.Context, session *sessions.Sess
 			return nil, services.NewDataConflictServiceError(nil, "Business is not active")
 		}
 
-		return pq.CreatePost(ctx, businessId, data)
+		post, err := pq.CreatePost(ctx, businessId, data)
+		if err != nil {
+			if errors.Is(err, db.ErrUnique) {
+				return nil, services.NewNotFoundServiceError(err)
+			}
+			return nil, err
+		}
+		return post, nil
 	})
-
-	if err != nil {
-		h.logger.Debug("Error creating post", "err", err)
-		return nil, err
-	}
-	h.logger.Debug("Created post", "id", post.Id)
-	return post, nil
 }
 
 func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, data *models.PostUpdate) error {
@@ -89,7 +89,7 @@ func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Sess
 	}
 
 	h.logger.Debug("Updating post", "Business Id", businessId, "Post Id", postId)
-	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
 			return services.NewUnauthorizedServiceError(err)
@@ -107,14 +107,15 @@ func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Sess
 			return err
 		}
 
-		return pq.UpdatePost(ctx, businessId, postId, data)
+		err = pq.UpdatePost(ctx, businessId, postId, data)
+		if err != nil {
+			if errors.Is(err, db.ErrUnique) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		h.logger.Debug("Error updating post", "err", err)
-		return err
-	}
-	h.logger.Debug("Updated post", "Business Id", businessId, "Post Id", postId)
-	return nil
 }
 
 func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int, status models.PostStatus) error {
@@ -124,7 +125,7 @@ func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.S
 		return services.NewUnauthenticatedServiceError(nil)
 	}
 
-	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
 			return services.NewUnauthorizedServiceError(err)
@@ -142,14 +143,15 @@ func (h *BusinessHandler) SetPostStatus(ctx context.Context, session *sessions.S
 			return err
 		}
 
-		return pq.SetPostStatus(ctx, businessId, postId, status)
+		err = pq.SetPostStatus(ctx, businessId, postId, status)
+		if err != nil {
+			if errors.Is(err, db.ErrUnique) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		h.logger.Debug("Error setting post status", "err", err)
-		return err
-	}
-	h.logger.Debug("Set post status", "Business Id", businessId, "Post Id", postId)
-	return nil
 }
 
 type PostAction string
