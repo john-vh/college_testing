@@ -32,9 +32,11 @@ func NewMailClient(host string, port string, from string, password string, logge
 
 func (d *MailInfo) toMsg() []byte {
 	return []byte(
-		fmt.Sprintf("To: %v\r\n", strings.Join(d.ToList, " ")) +
-			fmt.Sprintf("Subject: %v\r\n", d.Subject) +
-			"\r\n" +
+		fmt.Sprintf("To: %v\n", strings.Join(d.ToList, " ")) +
+			fmt.Sprintf("Subject: %v\n", d.Subject) +
+			"MIME-version: 1.0;\n" +
+			"Content-Type: text/html; charset=\"UTF-8\";\n" +
+			"\n" +
 			fmt.Sprintf("%v\r\n", d.Body))
 }
 

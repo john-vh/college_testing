@@ -75,52 +75,16 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 		}
 
 		go func() {
-			user, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
-				return pq.GetUserForId(context.TODO(), userId)
-			})
-			if err != nil {
-				h.logger.Debug("Failed to get user while sending email")
-				return
-			}
-			post, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.Post, error) {
-				return pq.GetPostForId(context.TODO(), businessId, postId)
-			})
-			if err != nil {
-				h.logger.Debug("Failed to get post while sending email")
-				return
-			}
-			owner, err := db.WithTxRet(context.TODO(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
+			owner, err := db.WithTxRet(context.Background(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
 				return pq.GetBusinessOwner(context.TODO(), businessId)
 			})
 			if err != nil {
 				h.logger.Debug("Failed to get post owner while sending email")
 				return
 			}
-
-			applicantEmail := &notifications.MailInfo{
-				ToList:  []string{user.Email},
-				Subject: fmt.Sprintf("Application Received - %v", post.Title),
-				Body: fmt.Sprintf(
-					"Hi %v!\n"+
-						"Thank you for applying to \"%v\"! You should expect to hear back about scheduling the test soon.",
-					user.Name, post.Title),
-			}
-			err = h.notifications.SendMsg(applicantEmail.ToList, applicantEmail)
+			err = h.notifications.EnqueueWithTimeout(context.Background(), notifications.NewApplicationReceivedNotification([]*models.User{owner}))
 			if err != nil {
-				h.logger.Debug("Failed to send application confirmation email")
-			}
-
-			email := &notifications.MailInfo{
-				ToList:  []string{owner.Email},
-				Subject: fmt.Sprintf("Application Received - %v", post.Title),
-				Body: fmt.Sprintf(
-					"Hi %v!\n"+
-						"%v has just applied to your your posting: \"%v\"",
-					owner.Name, user.Name, post.Title),
-			}
-			err = h.notifications.SendMsg(email.ToList, email)
-			if err != nil {
-				h.logger.Debug("Failed to send application confirmation email")
+				h.logger.Debug("Failed to send application confirmation email", "err", err)
 			}
 		}()
 		return nil

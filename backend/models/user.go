@@ -39,9 +39,11 @@ type UserCreate struct {
 
 type UserOverview struct {
 	UserCreate
-	Id        uuid.UUID  `json:"id" db:"id"`
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
-	Status    UserStatus `json:"status" db:"status"`
+	Id                        uuid.UUID  `json:"id" db:"id"`
+	NotifyApplicationUpdated  bool       `json:"notify_application_updated" db:"notify_application_updated"`
+	NotifyApplicationReceived bool       `json:"notify_application_received" db:"notify_application_received"`
+	CreatedAt                 time.Time  `json:"created_at" db:"created_at"`
+	Status                    UserStatus `json:"status" db:"status"`
 	acctInfo
 }
 

@@ -17,7 +17,7 @@ import (
 type BusinessHandler struct {
 	logger        *slog.Logger
 	sessions      *sessions.SessionsHandler
-	notifications *notifications.MailClient
+	notifications *notifications.NotificationsService
 	users         *user.UserHandler
 	store         *db.PgxStore
 	handleErr     services.ServicesHTTPErrorHandler
@@ -28,7 +28,7 @@ func NewBusinessHandler(
 	errHandler services.ServicesHTTPErrorHandler,
 	sessions *sessions.SessionsHandler,
 	users *user.UserHandler,
-	notifications *notifications.MailClient,
+	notifications *notifications.NotificationsService,
 	store *db.PgxStore,
 ) *BusinessHandler {
 	return &BusinessHandler{

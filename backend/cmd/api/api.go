@@ -36,6 +36,13 @@ func NewAPIServer(addr string, cfg env.Config, store *db.PgxStore, cache *redis.
 func (server *APIServer) Run() error {
 	router := http.NewServeMux()
 
+	backgroundServices := make([]services.BackgroundService, 0)
+
+	// Mail
+	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PASSWORD, slog.Default())
+	notificationsService := notifications.NewNotificationService(mailClient, slog.Default())
+	backgroundServices = append(backgroundServices, notificationsService)
+
 	// Sessions
 	const authSessionTTL = time.Hour * 24 * 30
 	const unauthSessionTTL = time.Hour
@@ -56,9 +63,6 @@ func (server *APIServer) Run() error {
 	}
 	authHandler.RegisterRoutes(router)
 
-	// Mail
-	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PASSWORD, slog.Default())
-
 	userHandler := user.NewUserHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	userHandler.RegisterRoutes(router)
 
@@ -67,9 +71,18 @@ func (server *APIServer) Run() error {
 		services.HandleHTTPError,
 		sessionsHandler,
 		userHandler,
-		mailClient,
+		notificationsService,
 		server.store)
 	businessHandler.RegisterRoutes(router)
 
-	return http.ListenAndServe(server.addr, services.RequestLoggerMiddleWare(slog.Default())(services.CORSMiddleware(router)))
+	for _, service := range backgroundServices {
+		service.Start()
+	}
+
+	res := http.ListenAndServe(server.addr, services.RequestLoggerMiddleWare(slog.Default())(services.CORSMiddleware(router)))
+
+	for _, service := range backgroundServices {
+		service.Stop()
+	}
+	return res
 }
