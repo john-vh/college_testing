@@ -6,8 +6,12 @@
     <title>Application Received</title>
   </head>
   <body>
-    <p>Hey!</p>
-  
-    <p>You have received an application to <b>your post</b>!
+    <h1>Application Received</h1>
+    <p>
+      Dear {{.Name}},
+      <br/>
+      <br/>
+      {{.ApplicantName}} has just applied to your posting "{{.PostName}}". Click <a href="{{.PostLink}}">here</a> to see!
+    </p>
   </body>
 </html>

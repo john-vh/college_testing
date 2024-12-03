@@ -25,6 +25,7 @@ type Config struct {
 	MAIL_PASSWORD               string
 	MAIL_HOST                   string
 	MAIL_PORT                   string
+	TEMPLATES_DIR               string
 }
 
 const (

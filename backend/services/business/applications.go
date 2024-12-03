@@ -9,7 +9,6 @@ import (
 	"github.com/john-vh/college_testing/backend/db"
 	"github.com/john-vh/college_testing/backend/models"
 	"github.com/john-vh/college_testing/backend/services"
-	"github.com/john-vh/college_testing/backend/services/notifications"
 	"github.com/john-vh/college_testing/backend/services/sessions"
 )
 
@@ -76,13 +75,13 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 
 		go func() {
 			owner, err := db.WithTxRet(context.Background(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
-				return pq.GetBusinessOwner(context.TODO(), businessId)
+				return pq.GetBusinessOwner(context.Background(), businessId)
 			})
 			if err != nil {
 				h.logger.Debug("Failed to get post owner while sending email")
 				return
 			}
-			err = h.notifications.EnqueueWithTimeout(context.Background(), notifications.NewApplicationReceivedNotification([]*models.User{owner}))
+			err = h.notifications.EnqueueWithTimeout(context.Background(), h.notifications.NewApplicationReceivedNotification(owner, targetUser, post))
 			if err != nil {
 				h.logger.Debug("Failed to send application confirmation email", "err", err)
 			}

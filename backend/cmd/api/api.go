@@ -40,7 +40,7 @@ func (server *APIServer) Run() error {
 
 	// Mail
 	mailClient := notifications.NewMailClient(server.cfg.MAIL_HOST, server.cfg.MAIL_PORT, server.cfg.MAIL_USER, server.cfg.MAIL_PASSWORD, slog.Default())
-	notificationsService := notifications.NewNotificationService(mailClient, slog.Default())
+	notificationsService := notifications.NewNotificationService(mailClient, server.cfg.UI_URI, server.cfg.TEMPLATES_DIR, slog.Default())
 	backgroundServices = append(backgroundServices, notificationsService)
 
 	// Sessions
