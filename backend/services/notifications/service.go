@@ -86,6 +86,8 @@ func (ns *NotificationsService) shouldNotify(n Notification) bool {
 	switch n.(type) {
 	case *ApplicationReceivedNotification:
 		return true
+	case *ApplicationUpdatedNotification:
+		return n.To().NotifyApplicationUpdated
 	}
 
 	ns.logger.Warn("Uncaught notification type", "notification", n)

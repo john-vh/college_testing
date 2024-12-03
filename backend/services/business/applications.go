@@ -97,7 +97,7 @@ func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *ses
 		return services.NewUnauthenticatedServiceError(nil)
 	}
 
-	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		sessionUser, err := pq.GetUserForId(ctx, sessionUserId)
 		if err != nil {
 			return services.NewUnauthorizedServiceError(err)
@@ -159,9 +159,27 @@ func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *ses
 			return err
 		}
 
-		return pq.SetApplicationStatus(ctx, businessId, postId, userId, status)
-
+		err = pq.SetApplicationStatus(ctx, businessId, postId, userId, status)
+		if err != nil {
+			return err
+		}
+		// FIXME: Send to appropriate person based on application
+		go db.WithTx(context.Background(), h.store, func(pq *db.PgxQueries) error {
+			application, err := pq.GetApplication(context.Background(), businessId, postId, userId)
+			if err != nil {
+				h.logger.Debug("Failed to send application update email", "err", err)
+				return err
+			}
+			err = h.notifications.EnqueueWithTimeout(context.Background(), h.notifications.NewApplicationUpdatedNotification(targetUser, targetUser, application))
+			if err != nil {
+				h.logger.Debug("Failed to send application update email", "err", err)
+				return err
+			}
+			return nil
+		})
+		return nil
 	})
+	return err
 }
 
 func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
