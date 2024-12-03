@@ -3,6 +3,7 @@ import AccountInfo from "./AccountInfo.tsx";
 import { PostingInfoPage } from "./PostingInfo.tsx";
 import { BusinessInfoPage } from "./BusinessInfo.tsx";
 import { ApplicationInfo } from "./ApplicationInfo.tsx";
+import { UserApplicationInfo } from "./UserApplicationInfo.tsx";
 
 export enum PageTag {
     Account = "account",
@@ -14,7 +15,8 @@ export enum PageTag {
 
 export enum Role {
     User = "user",
-    Admin = "admin"
+    Admin = "admin",
+    Founder = "founder"
 }
 
 interface InfoPageProps {
@@ -30,7 +32,8 @@ export const InfoPage = ({ page, role }: InfoPageProps) => {
             );
         case PageTag.Application:
             return (
-                <ApplicationInfo />
+                // (role === Role.Founder || role === Role.Admin) ? <ApplicationInfo /> : <UserApplicationInfo />
+                <UserApplicationInfo />
             );
         case PageTag.Business:
             return (

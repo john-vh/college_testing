@@ -1,5 +1,5 @@
 import { Button, Card, FormGroup, H3, H5, Icon, InputGroup } from "@blueprintjs/core";
-import useAccountInfo, { useIsAdmin } from "../hooks/useAccountInfo.ts";
+import useAccountInfo, { useGetRole } from "../hooks/useAccountInfo.ts";
 import React, { useEffect } from "react";
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { InfoPage, PageTag } from "../components/InfoPage.tsx";
@@ -8,8 +8,7 @@ import { useIsFounder } from "../hooks/useBusinessInfo.ts";
 
 export const Account = () => {
     const [currentPage, setCurrentPage] = React.useState<PageTag>(PageTag.Account);
-    const isFounder = useIsFounder();
-    const role = useIsAdmin();
+    const role = useGetRole();
     const handlePageChange = (page: PageTag) => {
         setCurrentPage(page);
     };
@@ -18,7 +17,7 @@ export const Account = () => {
         <div>
             <LandingNavbar showAccount={false} />
             <div className='App'>
-                <Sidebar isFounder={isFounder} handlePageChange={handlePageChange} />
+                <Sidebar handlePageChange={handlePageChange} />
                 <InfoPage page={currentPage} role={role} />
             </div>
         </div>

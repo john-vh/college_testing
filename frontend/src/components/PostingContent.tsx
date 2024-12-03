@@ -9,12 +9,12 @@ interface PostingContentProps {
 }
 
 export const PostingContent = ({ post }: PostingContentProps) => {
-    const myToaster = OverlayToaster.createAsync({ position: "bottom-right" });
+    // const myToaster = OverlayToaster.createAsync({ position: "bottom-right" });
     const applyPosting = useApplyPosting();
 
     const handleClick = (post) => {
         applyPosting(post, "");
-        myToaster.then(toaster => toaster.show({ message: "Startup notified of interest!", intent: "success" }));
+        // myToaster.then(toaster => toaster.show({ message: "Startup notified of interest!", intent: "success" }));
     }
 
     return (

@@ -37,7 +37,7 @@ export function useBusinessInfo({ isAdmin = false }: BusinessInfoProps): Busines
             }
         }
         fetchData();
-    }, []); // Empty dependency array ensures this runs only once
+    }, [isAdmin]); // Empty dependency array ensures this runs only once
 
     return businessInfo;
 }

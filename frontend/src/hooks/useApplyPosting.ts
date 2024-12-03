@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { PostingApplicationInfo } from './useApplicationInfo';
 import { PostingInfo } from './useAllPostings';
+import { Toaster, Position, Intent } from "@blueprintjs/core";
+
+const AppToaster = Toaster.create({
+    position: Position.BOTTOM_RIGHT,
+});
 
 export function useApplyPosting() {
 
@@ -21,8 +26,16 @@ export function useApplyPosting() {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
+                AppToaster.show({
+                    message: "Application submitted successfully!",
+                    intent: Intent.SUCCESS,
+                });
             } catch (error) {
                 console.log(error);
+                AppToaster.show({
+                    message: "Failed to apply, application already submitted",
+                    intent: Intent.DANGER,
+                });
             }
         }
         fetchData();

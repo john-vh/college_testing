@@ -34,7 +34,7 @@ export const ApplicationInfo = () => {
     }, [data]);
 
     return (
-        <div className="content2">
+        <div className="content">
             <CardList>
                 {filteredData.map((entry, id) => (
                     <div style={{ display: "flex", flexDirection: "column" }}>

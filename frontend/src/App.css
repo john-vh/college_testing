@@ -34,6 +34,7 @@
   height: calc(100vh - 50px);
   background-color: #EDEFF2;
   width: 200px;
+  flex: 0;
   transition: width 0.5s ease;
 }
 
@@ -42,6 +43,7 @@
   padding: 10px;
   background-color: #EDEFF2;
   width: 200px;
+  flex-shrink: 0;
   height: 100vh;
 }
 
@@ -86,16 +88,6 @@
 }
 
 .content {
-  padding: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  flex: 1;
-  flex-direction: column;
-  gap: 20px;
-  margin-left: 200px;
-}
-
-.content2 {
   padding: 20px;
   display: flex;
   flex: 1;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Role } from '../components/InfoPage.tsx';
+import { useIsFounder } from './useBusinessInfo.ts';
 
 export interface AccountInfo {
     id: string,
@@ -33,9 +34,19 @@ function useAccountInfo(): AccountInfo | null {
     return accountInfo;
 }
 
-export function useIsAdmin(): Role {
+export function useGetRole(): Role {
     const accountInfo = useAccountInfo();
-    return useMemo(() => accountInfo?.roles.includes("admin"), [accountInfo?.roles]) ? Role.Admin : Role.User;
+    const isFounder = useIsFounder();
+
+    return useMemo(() => {
+        if (accountInfo?.roles.includes("admin")) {
+            return Role.Admin; // Return Role.Admin if "admin" is in roles
+        }
+        if (isFounder) {
+            return Role.Founder; // Return Role.Founder if businesses exist and no "admin" role
+        }
+        return Role.User; // Return Role.User otherwise
+    }, [accountInfo?.roles, isFounder]);
 }
 
 export default useAccountInfo;

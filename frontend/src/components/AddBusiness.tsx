@@ -1,61 +1,180 @@
-import { Button, Card, FormGroup, H3, H5, Icon, InputGroup, TextArea } from "@blueprintjs/core";
-import useAccountInfo from "../hooks/useAccountInfo.ts";
-import React, { useEffect, useState } from "react";
-import { LandingNavbar } from "../components/LandingNavbar.tsx";
-import { useBusinessInfo } from "../hooks/useBusinessInfo.ts";
-import { NewBusinessInfo, useCreateBusiness } from "../hooks/useCreateBusiness.ts";
-
+import {
+    Button,
+    Card,
+    FormGroup,
+    H3,
+    InputGroup,
+    Intent,
+    Classes,
+    Callout,
+    Icon,
+    Spinner
+} from "@blueprintjs/core";
+import React, { useState } from "react";
+import { useCreateBusiness, NewBusinessInfo } from "../hooks/useCreateBusiness.ts";
 
 interface AddBusinessProps {
-    setBusinessAdd: (boolean) => void;
+    setBusinessAdd: (value: boolean) => void;
 }
 
 export const AddBusiness = ({ setBusinessAdd }: AddBusinessProps) => {
-
     const { createBusiness } = useCreateBusiness();
+    const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState<Partial<Record<keyof NewBusinessInfo, string>>>({});
 
-    const [userInfo, setUserInfo] = useState<NewBusinessInfo>({ name: "", desc: "", website: "" });
+    const [userInfo, setUserInfo] = useState<NewBusinessInfo>({
+        name: "",
+        desc: "",
+        website: ""
+    });
 
-    const handleChangeInfo = (id, value) => {
+    const validateForm = (): boolean => {
+        const newErrors: Partial<Record<keyof NewBusinessInfo, string>> = {};
+
+        if (!userInfo.name.trim()) {
+            newErrors.name = "Business name is required";
+        }
+
+        if (!userInfo.desc.trim()) {
+            newErrors.desc = "Description is required";
+        }
+
+        if (userInfo.website && !userInfo.website.match(/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/)) {
+            newErrors.website = "Please enter a valid website URL";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleChangeInfo = (id: keyof NewBusinessInfo, value: string) => {
         setUserInfo((prevInfo) => ({
             ...prevInfo,
             [id]: value
-        }))
-    }
+        }));
 
-    const handleSubmit = () => {
-        createBusiness(userInfo);
-        setBusinessAdd(false);
-    }
+        // Clear error when user starts typing
+        if (errors[id]) {
+            setErrors((prev) => ({
+                ...prev,
+                [id]: undefined
+            }));
+        }
+    };
 
-    const handleCancel = () => {
-        setBusinessAdd(false);
-    }
+    const handleSubmit = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            await createBusiness(userInfo);
+            setBusinessAdd(false);
+        } catch (error) {
+            console.error("Failed to create business:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '20px' }}>
-            <Card interactive={true} >
-                <FormGroup
-                    label="Business name"
-                    labelFor="name"
-                >
-                    <InputGroup id="name" value={userInfo.name} onValueChange={(value) => handleChangeInfo("name", value)} placeholder="Business Name" />
-                </FormGroup>
-                <FormGroup
-                    label="Description"
-                    labelFor="desc"
-                >
-                    <InputGroup id="desc" value={userInfo.desc} onValueChange={(value) => handleChangeInfo("desc", value)} placeholder="Description" />
-                </FormGroup>
-                <FormGroup
-                    label="Website"
-                    labelFor="website"
-                >
-                    <InputGroup id="website" value={userInfo.website} onValueChange={(value) => handleChangeInfo("website", value)} placeholder="Website" />
-                </FormGroup>
-                <Button onClick={() => handleSubmit()}>Submit</Button>
-                <Button onClick={() => handleCancel()}>Cancel</Button>
+        <div className="content">
+            <Card
+                style={{
+                    width: "100%",
+                    maxWidth: "500px",
+                    margin: "auto",
+                    padding: "2rem"
+                }}
+            >
+                <H3>Add New Business</H3>
+
+                <div style={{ marginTop: "1.5rem" }}>
+                    {Object.values(errors).some(error => error) && (
+                        <Callout
+                            intent={Intent.DANGER}
+                            icon="error"
+                            style={{ marginBottom: "1rem" }}
+                        >
+                            Please fix the errors below to continue
+                        </Callout>
+                    )}
+
+                    <FormGroup
+                        label="Business Name"
+                        labelFor="name"
+                        intent={errors.name ? Intent.DANGER : Intent.NONE}
+                        helperText={errors.name}
+                        labelInfo="(required)"
+                    >
+                        <InputGroup
+                            id="name"
+                            value={userInfo.name}
+                            onChange={(e) => handleChangeInfo("name", e.target.value)}
+                            placeholder="Enter business name"
+                            intent={errors.name ? Intent.DANGER : Intent.NONE}
+                            leftIcon="bullseye"
+                        />
+                    </FormGroup>
+
+                    <FormGroup
+                        label="Description"
+                        labelFor="desc"
+                        intent={errors.desc ? Intent.DANGER : Intent.NONE}
+                        helperText={errors.desc}
+                        labelInfo="(required)"
+                    >
+                        <InputGroup
+                            id="desc"
+                            value={userInfo.desc}
+                            onChange={(e) => handleChangeInfo("desc", e.target.value)}
+                            placeholder="Enter business description"
+                            intent={errors.desc ? Intent.DANGER : Intent.NONE}
+                            leftIcon="annotation"
+                        />
+                    </FormGroup>
+
+                    <FormGroup
+                        label="Website"
+                        labelFor="website"
+                        intent={errors.website ? Intent.DANGER : Intent.NONE}
+                        helperText={errors.website}
+                    >
+                        <InputGroup
+                            id="website"
+                            value={userInfo.website}
+                            onChange={(e) => handleChangeInfo("website", e.target.value)}
+                            placeholder="https://example.com"
+                            intent={errors.website ? Intent.DANGER : Intent.NONE}
+                            leftIcon="globe"
+                        />
+                    </FormGroup>
+
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: "0.75rem",
+                        marginTop: "2rem"
+                    }}>
+                        <Button
+                            onClick={() => setBusinessAdd(false)}
+                            minimal={true}
+                            icon="cross"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            intent={Intent.PRIMARY}
+                            disabled={isLoading}
+                            icon={isLoading ? <Spinner size={16} /> : "tick"}
+                        >
+                            {isLoading ? "Creating..." : "Create Business"}
+                        </Button>
+                    </div>
+                </div>
             </Card>
         </div>
     );
-}
+};

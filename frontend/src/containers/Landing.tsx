@@ -9,7 +9,6 @@ export const Landing = () => {
         <div>
             <LandingNavbar />
             <div className='App'>
-                <FilterBar />
                 <TestList />
             </div>
         </div>

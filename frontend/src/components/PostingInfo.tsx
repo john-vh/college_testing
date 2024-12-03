@@ -87,7 +87,7 @@ export const PostingInfoPage: React.FC = () => {
     }
 
     return (
-        <div style={{ width: "100%", padding: "20px", marginLeft: "200px" }}>
+        <div className="content">
             <Button
                 intent={Intent.PRIMARY}
                 large={true}

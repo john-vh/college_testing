@@ -60,7 +60,7 @@ export const BusinessInfoPage = ({ isAdmin }: BusinessInfoProps) => {
     }
 
     return (
-        <div style={{ width: '100%', padding: '20px', marginLeft: "200px" }}>
+        <div className="content">
             <Button
                 intent="primary"
                 large={true}
