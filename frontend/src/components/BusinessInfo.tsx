@@ -2,24 +2,65 @@ import { Button, Card, FormGroup, H3, H5, Icon, InputGroup, TextArea } from "@bl
 import useAccountInfo from "../hooks/useAccountInfo.ts";
 import React, { useEffect, useState } from "react";
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
-import { useBusinessInfo } from "../hooks/useBusinessInfo.ts";
+import { BusinessInfo, useBusinessInfo, useUpdateBusiness } from "../hooks/useBusinessInfo.ts";
 import { AddBusiness } from "./AddBusiness.tsx";
 
-export const BusinessInfo = () => {
+interface BusinessInfoProps {
+    isAdmin: boolean
+}
 
-    const data = useBusinessInfo();
+export const BusinessInfoPage = ({ isAdmin }: BusinessInfoProps) => {
+
+    const data = useBusinessInfo({ isAdmin });
+    const { updateBusiness } = useUpdateBusiness();
     const [businessAdd, setBusinessAdd] = useState(false);
+    const [isReadonly, setIsReadonly] = useState<boolean[]>([]);
+    const [newData, setNewData] = useState<BusinessInfo[]>([]);
 
     const addNewBusiness = () => {
         setBusinessAdd(true); // Change state to show the Add Business page
     };
+
+    const handleEditBusiness = (index: number) => {
+        const newIsReadonly = [...isReadonly];
+        newIsReadonly[index] = false;
+        console.log(newIsReadonly);
+        setIsReadonly(newIsReadonly);
+    }
+
+    const handleInputChange = (index: number, key: string, value: string) => {
+        const newData = [...data];
+        newData[index][key] = value;
+        setNewData(newData);
+    }
+
+    const handleSaveBusiness = (entry: BusinessInfo) => {
+        updateBusiness(entry);
+        console.log("updated");
+    }
+
+    useEffect(() => {
+        if (data && data.length > 0) {
+            setIsReadonly(Array(data.length).fill(true));
+            setNewData(Array(data.length));
+        }
+    }, [data]);
+
+    if (isAdmin) {
+        data.sort((a, b) => {
+            if (a.status === b.status) {
+                return 0;
+            }
+            return a.status === "pending" ? -1 : 1;
+        });
+    }
 
     if (businessAdd) {
         return <AddBusiness setBusinessAdd={setBusinessAdd} />
     }
 
     return (
-        <div style={{ width: '100%', padding: '20px' }}>
+        <div className="content">
             <Button
                 intent="primary"
                 large={true}
@@ -29,26 +70,26 @@ export const BusinessInfo = () => {
                 Add Business
             </Button>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {data != null && data.map((entry) => (
+                {data != null && data.map((entry, index) => (
                     <Card interactive={true} >
                         <H3>Business Information</H3>
                         <FormGroup label="Name"
                             labelFor="name" >
-                            <InputGroup id="name" defaultValue={entry.name} readOnly />
+                            <InputGroup asyncControl id="name" onChange={(e) => handleInputChange(index, "name", e.target.value)} value={entry.name} readOnly={isReadonly[index]} />
                         </FormGroup>
                         <FormGroup label="Website"
                             labelFor="website" >
-                            <InputGroup id="website" defaultValue={entry.website} readOnly />
+                            <InputGroup asyncControl id="website" onChange={(e) => handleInputChange(index, "website", e.target.value)} value={entry.website} readOnly={isReadonly[index]} />
                         </FormGroup>
                         <FormGroup label="Description"
                             labelFor="desc" >
-                            <TextArea id="desc" placeholder={entry.desc} readOnly fill />
+                            <TextArea asyncControl id="desc" onChange={(e) => handleInputChange(index, "desc", e.target.value)} value={entry.desc} readOnly={isReadonly[index]} fill />
                         </FormGroup>
-                        <Button>Manage business</Button>
+                        {isReadonly[index] ? <Button onClick={() => handleEditBusiness(index)}>Manage business</Button> : <Button onClick={() => handleSaveBusiness(entry)}>Save changes</Button>}
+                        {(isAdmin && entry.status === "pending") && <Button intent="primary">Approve business</Button>}
                     </Card>
                 ))}
             </div>
-
         </div>
     );
 }

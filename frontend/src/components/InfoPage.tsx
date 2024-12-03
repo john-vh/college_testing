@@ -1,8 +1,9 @@
 import React from "react";
 import AccountInfo from "./AccountInfo.tsx";
-import { PostingInfo } from "./PostingInfo.tsx";
-import { BusinessInfo } from "./BusinessInfo.tsx";
+import { PostingInfoPage } from "./PostingInfo.tsx";
+import { BusinessInfoPage } from "./BusinessInfo.tsx";
 import { ApplicationInfo } from "./ApplicationInfo.tsx";
+import { UserApplicationInfo } from "./UserApplicationInfo.tsx";
 
 export enum PageTag {
     Account = "account",
@@ -12,11 +13,18 @@ export enum PageTag {
     Postings = "postings"
 }
 
-interface InfoPageProps {
-    page: PageTag
+export enum Role {
+    User = "user",
+    Admin = "admin",
+    Founder = "founder"
 }
 
-export const InfoPage = ({ page }: InfoPageProps) => {
+interface InfoPageProps {
+    page: PageTag
+    role: Role
+}
+
+export const InfoPage = ({ page, role }: InfoPageProps) => {
     switch (page) {
         case PageTag.Account:
             return (
@@ -24,11 +32,12 @@ export const InfoPage = ({ page }: InfoPageProps) => {
             );
         case PageTag.Application:
             return (
-                <ApplicationInfo />
+                // (role === Role.Founder || role === Role.Admin) ? <ApplicationInfo /> : <UserApplicationInfo />
+                <UserApplicationInfo />
             );
         case PageTag.Business:
             return (
-                <BusinessInfo />
+                <BusinessInfoPage isAdmin={role === Role.Admin} />
             );
         case PageTag.Approvals:
             return (
@@ -36,7 +45,7 @@ export const InfoPage = ({ page }: InfoPageProps) => {
             );
         case PageTag.Postings:
             return (
-                <PostingInfo />
+                <PostingInfoPage />
             );
         default:
             return (
