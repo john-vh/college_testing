@@ -9,7 +9,10 @@ export interface PostingInfo {
     title: string,
     desc: string,
     pay: number,
-    time_est: number
+    time_est: number,
+    business_name?: string,
+    business_website?: string,
+    business_desc?: string
 }
 
 function useAllPostings(): PostingInfo[] | null {

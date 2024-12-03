@@ -29,10 +29,14 @@ export const ApplicationInfo = () => {
         rejectApplication({ entry, index });
     }
 
+    const filteredData = useMemo(() => {
+        return data.filter((entry) => entry.applications.length > 0);
+    }, [data]);
+
     return (
         <div className="content2">
             <CardList>
-                {data.map((entry, id) => (
+                {filteredData.map((entry, id) => (
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <Card key={id}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

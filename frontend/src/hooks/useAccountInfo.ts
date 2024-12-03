@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Role } from '../components/InfoPage.tsx';
 
 export interface AccountInfo {
     id: string,
     created_at: string,
-    status: number,
+    status: string,
     email: string,
     name: string,
-    email_verified: boolean
+    email_verified: boolean,
+    roles: string[]
 }
 
 function useAccountInfo(): AccountInfo | null {
@@ -29,6 +31,11 @@ function useAccountInfo(): AccountInfo | null {
     }, []); // Empty dependency array ensures this runs only once
 
     return accountInfo;
+}
+
+export function useIsAdmin(): Role {
+    const accountInfo = useAccountInfo();
+    return useMemo(() => accountInfo?.roles.includes("admin"), [accountInfo?.roles]) ? Role.Admin : Role.User;
 }
 
 export default useAccountInfo;

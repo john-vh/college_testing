@@ -12,7 +12,7 @@ const toaster = Toaster.create({
 });
 
 export const PostingInfoPage: React.FC = () => {
-    const { data = [], error, fetchPostingInfo } = usePostingInfo();
+    const { data = [], business_map, error, fetchPostingInfo } = usePostingInfo();
     const { activatePosting, loading: activateLoading } = useActivatePosting();
     const { deactivatePosting, loading: deactivateLoading } = useDeactivatePosting();
     const [showAddPosting, setShowAddPosting] = useState(false);
@@ -69,7 +69,7 @@ export const PostingInfoPage: React.FC = () => {
 
     if (error) {
         return (
-            <Card style={{ margin: "20px" }} elevation={2}>
+            <Card style={{ margin: "200px" }} elevation={2}>
                 <H3 style={{ color: Intent.DANGER }}>Error loading postings</H3>
                 <p>{error}</p>
             </Card>
@@ -105,24 +105,18 @@ export const PostingInfoPage: React.FC = () => {
                         elevation={2}
                         style={{ position: "relative" }}
                     >
-                        {(activateLoading || deactivateLoading) && (
+                        {/* {(activateLoading || deactivateLoading) && (
                             <div
                                 style={{
                                     position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    background: "rgba(255, 255, 255, 0.7)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    zIndex: 1,
                                 }}
                             >
                                 <Spinner size={50} />
                             </div>
-                        )}
+                        )} */}
 
                         <H3>Posting Information</H3>
 
@@ -137,6 +131,7 @@ export const PostingInfoPage: React.FC = () => {
 
                         <FormGroup label="Description" labelFor={`desc-${posting.id}`}>
                             <InputGroup
+                                asyncControl
                                 id={`desc-${posting.id}`}
                                 value={posting.desc}
                                 readOnly
@@ -147,7 +142,7 @@ export const PostingInfoPage: React.FC = () => {
                         <FormGroup label="Business" labelFor={`business-${posting.id}`}>
                             <InputGroup
                                 id={`business-${posting.id}`}
-                                value={posting.business_id}
+                                value={business_map.get(posting.business_id)?.name}
                                 readOnly
                                 fill
                             />
