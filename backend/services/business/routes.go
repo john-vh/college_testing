@@ -493,7 +493,7 @@ func (h *BusinessHandler) handleCompleteApplication(w http.ResponseWriter, r *ht
 }
 
 func (h *BusinessHandler) handleAbandonApplication(w http.ResponseWriter, r *http.Request) error {
-	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_INCOMPLETE)(w, r)
+	return h.handleSetApplicationStatus(models.APPLICATION_STATUS_CANCELLED)(w, r)
 }
 
 func (h *BusinessHandler) handleWithdrawApplication(w http.ResponseWriter, r *http.Request) error {

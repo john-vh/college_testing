@@ -86,6 +86,8 @@ func (ns *NotificationsService) shouldNotify(n Notification) bool {
 	switch n.(type) {
 	case *ApplicationReceivedNotification:
 		return true
+	case *ApplicationWithdrawnNotification:
+		return n.To().NotifyApplicationWithdrawn
 	case *ApplicationUpdatedNotification:
 		return n.To().NotifyApplicationUpdated
 	}

@@ -71,7 +71,7 @@ func (n *ApplicationReceivedNotification) HTML() (string, error) {
 	return res.String(), nil
 }
 
-type ApplicationUpdatedNotification struct {
+type ApplicationWithdrawnNotification struct {
 	recipient    *models.User
 	applicant    *models.User
 	application  *models.UserApplication
@@ -79,11 +79,69 @@ type ApplicationUpdatedNotification struct {
 	templatePath string
 }
 
-func (ns *NotificationsService) NewApplicationUpdatedNotification(recipient *models.User, applicant *models.User, application *models.UserApplication) *ApplicationUpdatedNotification {
+func (ns *NotificationsService) NewApplicationWithdrawnNotification(recipient *models.User, applicant *models.User, application *models.UserApplication) *ApplicationWithdrawnNotification {
+	templateName := "ApplicationWithdrawn"
+	postURI, _ := url.JoinPath(ns.frontendURL, "businesses", application.Business.Id.String(), "posts", strconv.Itoa(application.Post.Id))
+	return &ApplicationWithdrawnNotification{
+		recipient:   recipient,
+		applicant:   applicant,
+		application: application,
+		// FIXME: Need to link to the post
+		postURI:      postURI,
+		templatePath: filepath.Join(ns.templatesPath, templateName) + ".html",
+	}
+}
+
+func (n *ApplicationWithdrawnNotification) To() *models.User {
+	return n.recipient
+}
+
+func (n *ApplicationWithdrawnNotification) Subject() string {
+	return fmt.Sprintf("Application Withdrawn")
+}
+
+func (n *ApplicationWithdrawnNotification) HTML() (string, error) {
+	type templateData struct {
+		RecipientName string
+		ApplicantName string
+		BusinessName  string
+		PostName      string
+		PostLink      string
+	}
+
+	data := templateData{
+		RecipientName: n.recipient.Name,
+		ApplicantName: n.applicant.Name,
+		BusinessName:  n.application.Business.Name,
+		PostName:      n.application.Post.Title,
+		PostLink:      n.postURI,
+	}
+
+	t, err := template.ParseFiles(n.templatePath)
+	if err != nil {
+		return "", err
+	}
+
+	var res bytes.Buffer
+	err = t.Execute(&res, data)
+	if err != nil {
+		return "", err
+	}
+
+	return res.String(), nil
+}
+
+type ApplicationUpdatedNotification struct {
+	applicant    *models.User
+	application  *models.UserApplication
+	postURI      string
+	templatePath string
+}
+
+func (ns *NotificationsService) NewApplicationUpdatedNotification(applicant *models.User, application *models.UserApplication) *ApplicationUpdatedNotification {
 	templateName := fmt.Sprintf("Application%v", cases.Title(language.English).String(string(application.Status)))
 	postURI, _ := url.JoinPath(ns.frontendURL, "businesses", application.Business.Id.String(), "posts", strconv.Itoa(application.Post.Id))
 	return &ApplicationUpdatedNotification{
-		recipient:   recipient,
 		applicant:   applicant,
 		application: application,
 		// FIXME: Need to link to the post
@@ -97,20 +155,20 @@ func (n *ApplicationUpdatedNotification) To() *models.User {
 }
 
 func (n *ApplicationUpdatedNotification) Subject() string {
-	return fmt.Sprintf("Application %s", n.applicant.Status)
+	return "Application Status Update"
 }
 
 func (n *ApplicationUpdatedNotification) HTML() (string, error) {
 	type templateData struct {
-		RecipientName string
 		ApplicantName string
+		BusinessName  string
 		PostName      string
 		PostLink      string
 	}
 
 	data := templateData{
-		RecipientName: n.recipient.Name,
 		ApplicantName: n.applicant.Name,
+		BusinessName:  n.application.Business.Name,
 		PostName:      n.application.Post.Title,
 		PostLink:      n.postURI,
 	}
