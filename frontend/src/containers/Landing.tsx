@@ -6,46 +6,46 @@ import useAllPostings, { PostingInfo } from '../hooks/useAllPostings.ts';
 import useAccountInfo from "../hooks/useAccountInfo.ts";
 
 export const Landing = () => {
-    const account = useAccountInfo();
+  const account = useAccountInfo();
 
-    const handleLogin = () => {
-        window.location.href = "http://127.0.0.1:8080/auth/google";
-    }
+  const handleLogin = () => {
+    window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
+  }
 
-    if (account == null) {
-        return (
-            <div>
-                <LandingNavbar showHome={false} />
-                <div className='App' style={{ margin: "50px" }}>
-                    <NonIdealState
-                        icon="log-in"
-                        title="Please log in"
-                        description="In order to use TestHive, please log in with a Google account"
-                        action={<Button onClick={() => handleLogin()}>Log in</Button>}
-                    />
-                </div>
-            </div>
-        );
-    }
+  if (account == null) {
     return (
-        <div>
-            <LandingNavbar />
-            <div className='App'>
-                <TestList />
-            </div>
+      <div>
+        <LandingNavbar showHome={false} />
+        <div className='App' style={{ margin: "50px" }}>
+          <NonIdealState
+            icon="log-in"
+            title="Please log in"
+            description="In order to use TestHive, please log in with a Google account"
+            action={<Button onClick={() => handleLogin()}>Log in</Button>}
+          />
         </div>
-
+      </div>
     );
+  }
+  return (
+    <div>
+      <LandingNavbar />
+      <div className='App'>
+        <TestList />
+      </div>
+    </div>
+
+  );
 }
 
 const TestList = () => {
     const { postingInfo, businessMap } = useAllPostings();
     const navigate = useNavigate();
 
-    const handleClick = (post: PostingInfo) => {
-        navigate(`/posting/${post.id}`, { state: { post } });
-    };
-    const [searchQuery, setSearchQuery] = useState("");
+  const handleClick = (post: PostingInfo) => {
+    navigate(`/posting/${post.id}`, { state: { post } });
+  };
+  const [searchQuery, setSearchQuery] = useState("");
 
     const filteredPosts = useMemo(() => {
         return postingInfo?.filter(post =>
@@ -85,35 +85,35 @@ const TestList = () => {
                         </Card>
                     </div>
 
-                ))}
-            </div>
-        );
-    }
+        ))}
+      </div>
+    );
+  }
 }
 
 const FilterBar = () => {
-    const [isOpen, setOpen] = useState(true);
+  const [isOpen, setOpen] = useState(true);
 
-    if (isOpen) {
-        return (
-            <div className='Filter-bar'>
-                <div className="Filter-header">
-                    <div><strong>Filter Bar</strong></div>
-                    <Button intent="primary" onClick={() => setOpen(!isOpen)} icon='filter'></Button>
-                </div>
-                <Checkbox label='Filter 1' />
-                <Checkbox label='Filter 2' />
-                <Checkbox label='Filter 3' />
-            </div>
-        );
-    }
+  if (isOpen) {
+    return (
+      <div className='Filter-bar'>
+        <div className="Filter-header">
+          <div><strong>Filter Bar</strong></div>
+          <Button intent="primary" onClick={() => setOpen(!isOpen)} icon='filter'></Button>
+        </div>
+        <Checkbox label='Filter 1' />
+        <Checkbox label='Filter 2' />
+        <Checkbox label='Filter 3' />
+      </div>
+    );
+  }
 
-    else {
-        return (
-            <div className='hover'>
-                <Button intent="primary" onClick={() => setOpen(!isOpen)} icon='filter'></Button>
-            </div>
+  else {
+    return (
+      <div className='hover'>
+        <Button intent="primary" onClick={() => setOpen(!isOpen)} icon='filter'></Button>
+      </div>
 
-        )
-    }
+    )
+  }
 }

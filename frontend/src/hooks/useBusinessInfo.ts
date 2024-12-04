@@ -21,10 +21,10 @@ export function useBusinessInfo({ isAdmin = false }: BusinessInfoProps) {
         try {
             let response: Response | null = null;
             if (isAdmin) {
-                response = await fetch("http://127.0.0.1:8080/admin/businesses", { mode: "cors", credentials: 'include' });
+                response = await fetch(`${process.env.REACT_APP_API_URL}/admin/businesses`, { mode: "cors", credentials: 'include' });
             }
             else {
-                response = await fetch("http://127.0.0.1:8080/users/0/businesses", { mode: "cors", credentials: 'include' });
+                response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/businesses`, { mode: "cors", credentials: 'include' });
             }
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -62,7 +62,7 @@ export function useUpdateBusiness() {
         console.log(business);
         async function fetchData() {
             try {
-                const response = await fetch(`http://127.0.0.1:8080/businesses/${id}`,
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/businesses/${id}`,
                     {
                         method: "PATCH", mode: "cors", credentials: 'include',
                         headers: {

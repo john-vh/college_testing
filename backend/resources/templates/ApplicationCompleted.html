@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Application Feedback</title>
+  </head>
+  <body>
+    <h1>Test CompleteTest Complete</h1>
+    <p>
+      Dear {{.ApplicantName}},
+      <br/>
+      <br/>
+      Thank you for your work! 
+      {{.BusinessName}} has confirmed your test feedback for {{.PostName}}!
+    </p>
+    <p>This is an automated message sent by TestHive{{if .BusinessName}} on behalf of {{.BusinessName}}{{end}}. Please do not respond to this message.</p>
+  </body>
+</html>

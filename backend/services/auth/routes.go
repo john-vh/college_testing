@@ -106,6 +106,7 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 
 	linkedUser, err := auth.GetLinkedUser(r.Context(), provider, &claims)
 	if err != nil {
+		auth.logger.Error("Error checking for linked user", "err", err)
 		return err
 	}
 	if userId != nil && (linkedUser == nil || *userId == *linkedUser) {
@@ -116,7 +117,7 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 			return err
 		}
 	} else {
-		userId, err := auth.SaveAccount(context.TODO(), provider, &claims, &models.UserCreate{})
+		userId, err := auth.SaveAccount(context.TODO(), provider, &claims)
 		if err != nil {
 			auth.logger.Debug("Failed to create account")
 			return err

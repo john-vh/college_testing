@@ -1,6 +1,7 @@
 package models
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,4 +43,9 @@ type Business struct {
 type BusinessQueryParams struct {
 	Status *BusinessStatus
 	UserId *uuid.UUID
+}
+
+func (b *Business) URI(baseURL string) (string, error) {
+	// TODO: Point to a specific business
+	return url.JoinPath(baseURL, "account", "businesses")
 }

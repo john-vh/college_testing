@@ -1,6 +1,7 @@
 package models
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,12 +54,12 @@ type PostQueryParams struct {
 type ApplicationStatus string
 
 const (
-	APPLICATION_STATUS_PENDING    ApplicationStatus = "pending"
-	APPLICATION_STATUS_ACCEPTED   ApplicationStatus = "accepted"
-	APPLICATION_STATUS_REJECTED   ApplicationStatus = "rejected"
-	APPLICATION_STATUS_WITHDRAWN  ApplicationStatus = "withdrawn"
-	APPLICATION_STATUS_COMPLETED  ApplicationStatus = "completed"
-	APPLICATION_STATUS_INCOMPLETE ApplicationStatus = "incompleted"
+	APPLICATION_STATUS_PENDING   ApplicationStatus = "pending"
+	APPLICATION_STATUS_ACCEPTED  ApplicationStatus = "accepted"
+	APPLICATION_STATUS_REJECTED  ApplicationStatus = "rejected"
+	APPLICATION_STATUS_WITHDRAWN ApplicationStatus = "withdrawn"
+	APPLICATION_STATUS_COMPLETED ApplicationStatus = "completed"
+	APPLICATION_STATUS_CANCELLED ApplicationStatus = "cancelled"
 )
 
 type PostApplicationData struct {
@@ -79,6 +80,11 @@ type UserApplication struct {
 	Business  BusinessOverview  `json:"business" db:"business"`
 	Status    ApplicationStatus `json:"status" db:"status"`
 	CreatedAt time.Time         `json:"created_at" db:"created_at"`
+}
+
+func (app *UserApplication) URI(baseURL string) (string, error) {
+	// TODO: Point to a specific application
+	return url.JoinPath(baseURL, "account", "applications")
 }
 
 type UserApplicationQueryParams struct {

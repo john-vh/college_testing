@@ -34,11 +34,14 @@ type OpenIDClaims struct {
 	Id string `json:"sub" db:"id"`
 }
 
-type UserCreate struct {
+type UserUpdate struct {
+	NotifyApplicationUpdated   bool `json:"notify_application_updated" db:"notify_application_updated"`
+	NotifyApplicationReceived  bool `json:"notify_application_received" db:"notify_application_received"`
+	NotifyApplicationWithdrawn bool `json:"notify_application_withdrawn" db:"notify_application_withdrawn"`
 }
 
 type UserOverview struct {
-	UserCreate
+	UserUpdate
 	Id        uuid.UUID  `json:"id" db:"id"`
 	CreatedAt time.Time  `json:"created_at" db:"created_at"`
 	Status    UserStatus `json:"status" db:"status"`
@@ -56,6 +59,11 @@ type User struct {
 	UserOverview
 	Roles    []UserRole    `json:"roles" db:"roles" validate:"required,dive"`
 	Accounts []UserAccount `json:"accounts" db:"accounts"`
+}
+
+type UserQueryParams struct {
+	Role   *UserRole
+	Status *UserStatus
 }
 
 func (u *User) HasRole(role UserRole) bool {

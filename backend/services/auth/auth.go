@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -64,8 +65,8 @@ func NewAuthHandler(logger *slog.Logger, errHandler services.ServicesHTTPErrorHa
 	}, nil
 }
 
-func (auth *AuthHandler) SaveAccount(ctx context.Context, openidProvider string, acctData *models.OpenIDClaims, userData *models.UserCreate) (*uuid.UUID, error) {
-	auth.logger.Info("Auth saving account", "createUser", userData != nil)
+func (auth *AuthHandler) SaveAccount(ctx context.Context, openidProvider string, acctData *models.OpenIDClaims) (*uuid.UUID, error) {
+	auth.logger.Info("Auth saving account")
 	return db.WithTxRet(ctx, auth.store, func(pq *db.PgxQueries) (*uuid.UUID, error) {
 		err := pq.SaveOpenIDAcct(ctx, openidProvider, acctData)
 		if err != nil {
@@ -80,12 +81,12 @@ func (auth *AuthHandler) SaveAccount(ctx context.Context, openidProvider string,
 		}
 
 		// Return the already associated user, or do not create a user if no data is given
-		if linkedUserId != nil || userData == nil {
+		if linkedUserId != nil {
 			auth.logger.Debug("Skipping user create", "linked_id", linkedUserId)
 			return linkedUserId, nil
 		}
 
-		userId, err := pq.CreateUser(ctx, userData)
+		userId, err := pq.CreateUser(ctx)
 		if err != nil {
 			auth.logger.Debug("Failed to create user")
 			return nil, err
@@ -104,6 +105,9 @@ func (auth *AuthHandler) GetLinkedUser(ctx context.Context, openidProvider strin
 	return db.WithTxRet(ctx, auth.store, func(pq *db.PgxQueries) (*uuid.UUID, error) {
 		linkedUserId, err := pq.GetLinkedUserId(ctx, openidProvider, acctData.Id)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return linkedUserId, nil
