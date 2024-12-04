@@ -47,10 +47,9 @@ export function usePostingInfo(): PostingInfoHook {
     }
   }, []);
 
-  // Initial fetch on mount
-  useState(() => {
-    fetchPostingInfo();
-  });
+    useState(() => {
+        fetchPostingInfo();
+    });
 
   return {
     data,

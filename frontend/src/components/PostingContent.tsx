@@ -27,9 +27,6 @@ export const PostingContent = ({ post }: PostingContentProps) => {
                         </div>
                         <H2>{post.title}</H2>
                     </div>
-
-                    <Button style={{ color: "black" }} disabled={true} minimal={true} outlined={true}>Virtual Live</Button>
-
                 </div>
                 <p><strong>Description</strong></p>
                 <p>{post.desc}</p>
@@ -42,9 +39,6 @@ export const PostingContent = ({ post }: PostingContentProps) => {
                         </div>
                         <div>
                             <strong>Founder Name</strong>
-                            <div>
-                                Founder Description
-                            </div>
                         </div>
                     </div>
                     <div style={{ padding: '10px', minWidth: '130px' }}>

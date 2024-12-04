@@ -39,51 +39,51 @@ export const Landing = () => {
 }
 
 const TestList = () => {
-  const posts = useAllPostings();
-  const navigate = useNavigate();
+    const { postingInfo, businessMap } = useAllPostings();
+    const navigate = useNavigate();
 
   const handleClick = (post: PostingInfo) => {
     navigate(`/posting/${post.id}`, { state: { post } });
   };
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredPosts = useMemo(() => {
-    return posts?.filter(post =>
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.desc.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [posts, searchQuery]);
+    const filteredPosts = useMemo(() => {
+        return postingInfo?.filter(post =>
+            post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            post.desc.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [postingInfo, searchQuery]);
 
-  if (posts != null) {
-    return (
-      <div className='Test-list'>
-        <div style={{ position: "absolute" }}>
-          <InputGroup
-            placeholder="Search..."
-            type="search"
-            value={searchQuery}
-            onValueChange={(value) => setSearchQuery(value)}
-          />
-        </div>
-        <div style={{ paddingBottom: "50px" }} />
-        {filteredPosts != null && filteredPosts.map((post, index) => (
-          <div className='Card'>
-            <Card interactive={true} >
-              <div className='Flex'>
-                <div className='icon-p'>
-                  <Icon icon="bookmark" size={35}></Icon>
+    if (postingInfo != null) {
+        return (
+            <div className='Test-list'>
+                <div style={{ position: "absolute" }}>
+                    <InputGroup
+                        placeholder="Search..."
+                        type="search"
+                        value={searchQuery}
+                        onValueChange={(value) => setSearchQuery(value)}
+                    />
                 </div>
-                <div>
-                  <H5>{post.title}</H5>
-                  <p>Startup Name</p>
-                </div>
-              </div>
-              <p className="bp5-text-muted">{post.desc}</p>
-              <div className='Flex align-right'>
-                <div className="gap">Compensation: $5</div>
-                <Button intent="primary" onClick={() => handleClick(post)}>Details</Button>
-              </div>
-            </Card>
-          </div>
+                <div style={{ paddingBottom: "50px" }} />
+                {filteredPosts != null && filteredPosts.map((post, index) => (
+                    <div className='Card'>
+                        <Card interactive={true} >
+                            <div className='Flex'>
+                                <div className='icon-p'>
+                                    <Icon icon="bookmark" size={35}></Icon>
+                                </div>
+                                <div>
+                                    <H5>{post.title}</H5>
+                                    <p>{businessMap.get(post.business_id)?.name ?? "Startup Name"}</p>
+                                </div>
+                            </div>
+                            <p className="bp5-text-muted">{post.desc}</p>
+                            <div className='Flex align-right'>
+                                <div className="gap">Compensation: ${post.pay}</div>
+                                <Button intent="primary" onClick={() => handleClick(post)}>Details</Button>
+                            </div>
+                        </Card>
+                    </div>
 
         ))}
       </div>
