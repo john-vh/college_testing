@@ -1,4 +1,4 @@
-import { Button, Card, FormGroup, H3, InputGroup, Intent, Spinner } from "@blueprintjs/core";
+import { Button, Card, FormGroup, H3, InputGroup, Intent, Spinner, Tag } from "@blueprintjs/core";
 import { Toaster, Position } from "@blueprintjs/core";
 import React, { useMemo, useState } from "react";
 import { AddPosting } from "./AddPosting.tsx";
@@ -118,7 +118,10 @@ export const PostingInfoPage: React.FC = () => {
                             </div>
                         )} */}
 
-                        <H3>Posting Information</H3>
+                        <div className="Flex" style={{ justifyContent: "space-between" }}>
+                            <H3>Posting Information</H3>
+                            <Tag round intent={posting.status === "active" ? Intent.SUCCESS : Intent.DANGER}>{posting.status.toLocaleUpperCase()}</Tag>
+                        </div>
 
                         <FormGroup label="Title" labelFor={`title-${posting.id}`}>
                             <InputGroup
@@ -161,7 +164,6 @@ export const PostingInfoPage: React.FC = () => {
                             intent={posting.status === "disabled" ? Intent.SUCCESS : Intent.DANGER}
                             onClick={() => handleStatusChange(posting)}
                             disabled={activateLoading || deactivateLoading}
-                            fill
                         >
                             {posting.status === "disabled" ? "Activate posting" : "Deactivate posting"}
                         </Button>

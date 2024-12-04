@@ -3,7 +3,9 @@ import AccountInfo from "./AccountInfo.tsx";
 import { PostingInfoPage } from "./PostingInfo.tsx";
 import { BusinessInfoPage } from "./BusinessInfo.tsx";
 import { ApplicationInfo } from "./ApplicationInfo.tsx";
-import { UserApplicationInfo } from "./UserApplicationInfo.tsx";
+import { UserApplicationInfoPage } from "./UserApplicationInfo.tsx";
+import { Route, Routes, useParams } from "react-router-dom";
+import { useGetRole } from "../hooks/useAccountInfo.ts";
 
 export enum PageTag {
     Account = "account",
@@ -19,37 +21,25 @@ export enum Role {
     Founder = "founder"
 }
 
-interface InfoPageProps {
-    page: PageTag
-    role: Role
-}
+export const InfoPage = () => {
+    const { page } = useParams<{ page: string }>();
+    const role = useGetRole();
 
-export const InfoPage = ({ page, role }: InfoPageProps) => {
     switch (page) {
-        case PageTag.Account:
+        case "account":
+            return <AccountInfo />;
+        case "application":
             return (
-                <AccountInfo />
+                //(role === Role.Founder || role === Role.Admin) ? <ApplicationInfo /> : <UserApplicationInfo />
+                <UserApplicationInfoPage />
             );
-        case PageTag.Application:
-            return (
-                // (role === Role.Founder || role === Role.Admin) ? <ApplicationInfo /> : <UserApplicationInfo />
-                <UserApplicationInfo />
-            );
-        case PageTag.Business:
-            return (
-                <BusinessInfoPage isAdmin={role === Role.Admin} />
-            );
-        case PageTag.Approvals:
-            return (
-                <AccountInfo />
-            );
-        case PageTag.Postings:
-            return (
-                <PostingInfoPage />
-            );
+        case "business":
+            return <BusinessInfoPage />;
+        case "approvals":
+            return <AccountInfo />;
+        case "postings":
+            return <PostingInfoPage />;
         default:
-            return (
-                <AccountInfo />
-            );
+            return <AccountInfo />;
     }
 }

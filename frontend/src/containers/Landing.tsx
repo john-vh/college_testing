@@ -1,10 +1,32 @@
-import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, InputGroup } from "@blueprintjs/core";
+import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, InputGroup, NonIdealState } from "@blueprintjs/core";
 import React, { useState, useMemo } from 'react';
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { useNavigate } from 'react-router-dom';
 import useAllPostings, { PostingInfo } from '../hooks/useAllPostings.ts';
+import useAccountInfo from "../hooks/useAccountInfo.ts";
 
 export const Landing = () => {
+    const account = useAccountInfo();
+
+    const handleLogin = () => {
+        window.location.href = "http://127.0.0.1:8080/auth/google";
+    }
+
+    if (account == null) {
+        return (
+            <div>
+                <LandingNavbar showHome={false} />
+                <div className='App' style={{ margin: "50px" }}>
+                    <NonIdealState
+                        icon="log-in"
+                        title="Please log in"
+                        description="In order to use TestHive, please log in with a Google account"
+                        action={<Button onClick={() => handleLogin()}>Log in</Button>}
+                    />
+                </div>
+            </div>
+        );
+    }
     return (
         <div>
             <LandingNavbar />

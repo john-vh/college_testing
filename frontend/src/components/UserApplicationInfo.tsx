@@ -1,22 +1,37 @@
-import { Button, Card, FormGroup, H3, InputGroup, Label, Tag } from "@blueprintjs/core";
+import { Button, Card, FormGroup, H3, InputGroup, Intent, Label, Tag } from "@blueprintjs/core";
 import { Toaster, Position } from "@blueprintjs/core";
 import React, { useMemo } from "react";
-import { useUserApplicationInfo } from "../hooks/useUserApplicationInfo.ts";
+import { UserApplicationInfo, useUserApplicationInfo } from "../hooks/useUserApplicationInfo.ts";
 import useAccountInfo from "../hooks/useAccountInfo.ts";
+import { useWithdrawApplication } from "../hooks/useWithdrawApplication.ts";
+import AccountInfo from "./AccountInfo.tsx";
 
 const toaster = Toaster.create({
     position: Position.TOP,
 });
 
-export const UserApplicationInfo: React.FC = () => {
+export const UserApplicationInfoPage: React.FC = () => {
     const data = useUserApplicationInfo();
     const account = useAccountInfo();
-    // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    const withdrawApplication = useWithdrawApplication();
 
     const sortedData = useMemo(
-        () => [...data].sort((a, b) => -a.created_at.localeCompare(b.created_at)),
+        () =>
+            [...data]
+                .filter((entry) => entry.status !== "withdrawn")
+                .sort((a, b) => -a.created_at.localeCompare(b.created_at)),
         [data]
     );
+
+    if (account == null) {
+        return <AccountInfo />
+    }
+
+    const handleWithdraw = (application: UserApplicationInfo) => {
+        const { business: { id: business_id }, post: { id: post_id } } = application;
+        const user_id = account?.id;
+        withdrawApplication({ business_id, post_id, user_id });
+    }
 
     return (
         <div style={{ width: "100%", padding: "20px", marginLeft: "200px" }}>
@@ -25,7 +40,13 @@ export const UserApplicationInfo: React.FC = () => {
                     <Card interactive={true}>
                         <div className="Flex" style={{ justifyContent: "space-between" }}>
                             <H3>Application: {application.post.title}</H3>
-                            <Tag large>Current Status</Tag>
+                            <Tag round intent={
+                                application.status === "active"
+                                    ? Intent.SUCCESS
+                                    : application.status === "pending"
+                                        ? Intent.WARNING
+                                        : Intent.DANGER
+                            }>{application.status.toLocaleUpperCase()}</Tag>
                         </div>
 
                         <Label>{formatDate(application.created_at)}</Label>
@@ -38,7 +59,7 @@ export const UserApplicationInfo: React.FC = () => {
                             <InputGroup id="pay" placeholder={"$" + application.post.pay.toString()} readOnly />
                         </FormGroup>
                         <div className="Flex" style={{ justifyContent: "space-between" }}>
-                            <Button>Withdraw application</Button>
+                            {application.status !== "withdrawn" && <Button onClick={() => handleWithdraw(application)}>Withdraw application</Button>}
                             <Button rightIcon="issue" minimal />
                         </div>
                     </Card>
