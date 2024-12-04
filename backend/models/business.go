@@ -18,10 +18,10 @@ const (
 type BusinessUpdate struct {
 	Website string `json:"website" db:"website" validate:"required,http_url"`
 	Desc    string `json:"desc" db:"description" validate:"required,min=8,max=256"`
+	Name    string `json:"name" db:"name" validate:"required,min=3,max=64"`
 }
 
 type BusinessCreate struct {
-	Name string `json:"name" db:"name" validate:"required,min=3,max=64"`
 	BusinessUpdate
 }
 
