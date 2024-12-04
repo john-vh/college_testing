@@ -121,10 +121,11 @@ func (pq *PgxQueries) UpdateBusiness(ctx context.Context, businessId *uuid.UUID,
 
 	res, err := pq.tx.Exec(ctx, `
     UPDATE businesses SET
-    (website, description) = (@website, @description)
+    (name, website, description) = (@name, @website, @description)
     WHERE businesses.id = @businessId
     `, pgx.NamedArgs{
 		"businessId":  businessId,
+		"name":        data.Name,
 		"website":     data.Website,
 		"description": data.Desc,
 	})
