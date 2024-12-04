@@ -10,7 +10,7 @@ import (
 	"github.com/john-vh/college_testing/backend/services"
 )
 
-func (pq *PgxQueries) CreateUser(ctx context.Context, data *models.UserCreate) (*uuid.UUID, error) {
+func (pq *PgxQueries) CreateUser(ctx context.Context) (*uuid.UUID, error) {
 	userId, err := uuid.NewRandom()
 	if err != nil {
 		return nil, services.NewInternalServiceError(err)
@@ -29,6 +29,30 @@ func (pq *PgxQueries) CreateUser(ctx context.Context, data *models.UserCreate) (
 	}
 
 	return &userId, nil
+}
+
+func (pq *PgxQueries) UpdateUser(ctx context.Context, id *uuid.UUID, data *models.UserUpdate) error {
+	res, err := pq.tx.Exec(ctx, `
+    UPDATE users SET
+    (notify_application_updated, notify_application_received, notify_application_withdrawn) = 
+    (@notifyApplicationUpdated, @notifyApplicationReceived, @notifyApplicationWithdrawn)
+    WHERE users.id = @id 
+  `, pgx.NamedArgs{
+		"id":                         id,
+		"notifyApplicationUpdated":   data.NotifyApplicationUpdated,
+		"notifyApplicationReceived":  data.NotifyApplicationReceived,
+		"notifyApplicationWithdrawn": data.NotifyApplicationWithdrawn,
+	})
+
+	if err != nil {
+		return handlePgxError(err)
+	}
+
+	if res.RowsAffected() == 0 {
+		return ErrNoRows
+	}
+
+	return nil
 }
 
 func (pq *PgxQueries) SaveOpenIDAcct(ctx context.Context, openIDProvider string, data *models.OpenIDClaims) error {

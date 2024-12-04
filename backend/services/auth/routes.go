@@ -116,7 +116,7 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 			return err
 		}
 	} else {
-		userId, err := auth.SaveAccount(context.TODO(), provider, &claims, &models.UserCreate{})
+		userId, err := auth.SaveAccount(context.TODO(), provider, &claims)
 		if err != nil {
 			auth.logger.Debug("Failed to create account")
 			return err

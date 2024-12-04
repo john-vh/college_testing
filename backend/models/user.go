@@ -34,17 +34,17 @@ type OpenIDClaims struct {
 	Id string `json:"sub" db:"id"`
 }
 
-type UserCreate struct {
+type UserUpdate struct {
+	NotifyApplicationUpdated   bool `json:"notify_application_updated" db:"notify_application_updated"`
+	NotifyApplicationReceived  bool `json:"notify_application_received" db:"notify_application_received"`
+	NotifyApplicationWithdrawn bool `json:"notify_application_withdrawn" db:"notify_application_withdrawn"`
 }
 
 type UserOverview struct {
-	UserCreate
-	Id                         uuid.UUID  `json:"id" db:"id"`
-	NotifyApplicationUpdated   bool       `json:"notify_application_updated" db:"notify_application_updated"`
-	NotifyApplicationReceived  bool       `json:"notify_application_received" db:"notify_application_received"`
-	NotifyApplicationWithdrawn bool       `json:"notify_application_withdrawn" db:"notify_application_withdrawn"`
-	CreatedAt                  time.Time  `json:"created_at" db:"created_at"`
-	Status                     UserStatus `json:"status" db:"status"`
+	UserUpdate
+	Id        uuid.UUID  `json:"id" db:"id"`
+	CreatedAt time.Time  `json:"created_at" db:"created_at"`
+	Status    UserStatus `json:"status" db:"status"`
 	acctInfo
 }
 
