@@ -39,7 +39,7 @@ export const Landing = () => {
 }
 
 const TestList = () => {
-    const posts = useAllPostings();
+    const { postingInfo, businessMap } = useAllPostings();
     const navigate = useNavigate();
 
     const handleClick = (post: PostingInfo) => {
@@ -48,12 +48,12 @@ const TestList = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredPosts = useMemo(() => {
-        return posts?.filter(post =>
+        return postingInfo?.filter(post =>
             post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             post.desc.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [posts, searchQuery]);
+    }, [postingInfo, searchQuery]);
 
-    if (posts != null) {
+    if (postingInfo != null) {
         return (
             <div className='Test-list'>
                 <div style={{ position: "absolute" }}>
@@ -74,12 +74,12 @@ const TestList = () => {
                                 </div>
                                 <div>
                                     <H5>{post.title}</H5>
-                                    <p>Startup Name</p>
+                                    <p>{businessMap.get(post.business_id)?.name ?? "Startup Name"}</p>
                                 </div>
                             </div>
                             <p className="bp5-text-muted">{post.desc}</p>
                             <div className='Flex align-right'>
-                                <div className="gap">Compensation: $5</div>
+                                <div className="gap">Compensation: ${post.pay}</div>
                                 <Button intent="primary" onClick={() => handleClick(post)}>Details</Button>
                             </div>
                         </Card>

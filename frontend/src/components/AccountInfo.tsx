@@ -4,11 +4,20 @@ import React, { useEffect } from "react";
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { useIsFounder } from "../hooks/useBusinessInfo.ts";
 import { Role } from "./InfoPage.tsx";
+import { useLogout } from "../hooks/useLogout.ts";
 
 export const AccountInfo = () => {
 
     const data = useAccountInfo();
     const role = useGetRole();
+    const logout = useLogout();
+
+    const handleLogout = () => {
+        logout();
+        window.location.href = "http://127.0.0.1:3000";
+    }
+
+
 
     if (data != null) {
         return (
@@ -29,7 +38,7 @@ export const AccountInfo = () => {
                         <Checkbox checked={role === Role.Founder || role === Role.Admin}>Founder</Checkbox>
                         <Checkbox checked={role === Role.Admin}>Admin</Checkbox>
                     </FormGroup>
-                    <Button>Logout</Button>
+                    <Button onClick={() => handleLogout()}>Logout</Button>
                 </Card>
             </div>
         );

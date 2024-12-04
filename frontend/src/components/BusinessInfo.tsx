@@ -1,18 +1,22 @@
 import { Button, Card, FormGroup, H3, H5, Icon, InputGroup, Intent, Tag, TextArea } from "@blueprintjs/core";
 import useAccountInfo, { useGetRole } from "../hooks/useAccountInfo.ts";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { BusinessInfo, useBusinessInfo, useUpdateBusiness } from "../hooks/useBusinessInfo.ts";
 import { AddBusiness } from "./AddBusiness.tsx";
 import { Role } from "./InfoPage.tsx";
+import { useApproveBusiness } from "../hooks/useApproveBusiness.ts";
 
 export const BusinessInfoPage = () => {
     const isAdmin = useGetRole() === Role.Admin;
-    const data = useBusinessInfo({ isAdmin });
+    const { businessInfo, fetchData } = useBusinessInfo({ isAdmin });
+    const approveBusiness = useApproveBusiness();
     const { updateBusiness } = useUpdateBusiness();
     const [businessAdd, setBusinessAdd] = useState(false);
     const [isReadonly, setIsReadonly] = useState<boolean[]>([]);
     const [newData, setNewData] = useState<BusinessInfo[]>([]);
+
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const addNewBusiness = () => {
         setBusinessAdd(true); // Change state to show the Add Business page
@@ -26,7 +30,7 @@ export const BusinessInfoPage = () => {
     }
 
     const handleInputChange = (index: number, key: string, value: string) => {
-        const newData = [...data];
+        const newData = [...businessInfo];
         newData[index][key] = value;
         setNewData(newData);
     }
@@ -36,15 +40,27 @@ export const BusinessInfoPage = () => {
         console.log("updated");
     }
 
+    const handleApproveBusiness = async (id: string) => {
+        approveBusiness(id);
+        await delay(100);
+        await fetchData();
+        // console.log("approved");
+    }
+
+    const sortedBusinessInfo = useMemo(
+        () => [...businessInfo].sort((a, b) => a.name.localeCompare(b.name)),
+        [businessInfo]
+    );
+
     useEffect(() => {
-        if (data && data.length > 0) {
-            setIsReadonly(Array(data.length).fill(true));
-            setNewData(Array(data.length));
+        if (businessInfo && businessInfo.length > 0) {
+            setIsReadonly(Array(businessInfo.length).fill(true));
+            setNewData(Array(businessInfo.length));
         }
-    }, [data]);
+    }, [businessInfo]);
 
     if (isAdmin) {
-        data.sort((a, b) => {
+        businessInfo.sort((a, b) => {
             if (a.status === b.status) {
                 return 0;
             }
@@ -67,7 +83,7 @@ export const BusinessInfoPage = () => {
                 Add Business
             </Button>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {data != null && data.map((entry, index) => (
+                {sortedBusinessInfo != null && sortedBusinessInfo.map((entry, index) => (
                     <Card interactive={true} >
                         <div className="Flex" style={{ justifyContent: "space-between" }}>
                             <H3>Business Information</H3>
@@ -86,7 +102,7 @@ export const BusinessInfoPage = () => {
                             labelFor="desc" >
                             <TextArea asyncControl id="desc" onChange={(e) => handleInputChange(index, "desc", e.target.value)} value={entry.desc} readOnly={isReadonly[index]} fill />
                         </FormGroup>
-                        {(isAdmin && entry.status === "pending") && <Button intent="success" style={{ marginRight: "10px" }}>Approve business</Button>}
+                        {(isAdmin && entry.status === "pending") && <Button intent="success" style={{ marginRight: "10px" }} onClick={() => handleApproveBusiness(entry.id)}>Approve business</Button>}
                         {isReadonly[index] ? <Button onClick={() => handleEditBusiness(index)}>Manage business</Button> : <Button onClick={() => handleSaveBusiness(entry)}>Save changes</Button>}
                     </Card>
                 ))}

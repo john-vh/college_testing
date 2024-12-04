@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 export interface BusinessInfo {
     id: string,
@@ -14,36 +14,38 @@ interface BusinessInfoProps {
     isAdmin?: boolean
 }
 
-export function useBusinessInfo({ isAdmin = false }: BusinessInfoProps): BusinessInfo[] {
+export function useBusinessInfo({ isAdmin = false }: BusinessInfoProps) {
     const [businessInfo, setBusinessInfo] = useState<BusinessInfo[]>([]);
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                let response: Response | null = null;
-                if (isAdmin) {
-                    response = await fetch("http://127.0.0.1:8080/admin/businesses", { mode: "cors", credentials: 'include' });
-                }
-                else {
-                    response = await fetch("http://127.0.0.1:8080/users/0/businesses", { mode: "cors", credentials: 'include' });
-                }
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data: BusinessInfo[] = await response.json();
-                setBusinessInfo(data);
-            } catch (error) {
-                console.log(error);
+    const fetchData = useCallback(async () => {
+        try {
+            let response: Response | null = null;
+            if (isAdmin) {
+                response = await fetch("http://127.0.0.1:8080/admin/businesses", { mode: "cors", credentials: 'include' });
             }
+            else {
+                response = await fetch("http://127.0.0.1:8080/users/0/businesses", { mode: "cors", credentials: 'include' });
+            }
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data: BusinessInfo[] = await response.json();
+            setBusinessInfo(data);
+        } catch (error) {
+            console.log(error);
         }
-        fetchData();
-    }, [isAdmin]); // Empty dependency array ensures this runs only once
+    }, [isAdmin]);
 
-    return businessInfo;
+    useState(() => {
+        fetchData();
+    });
+
+
+    return { businessInfo, fetchData };
 }
 
 export function useIsFounder() {
-    const businessInfo = useBusinessInfo({});
+    const { businessInfo } = useBusinessInfo({});
 
     // Memoize the check whether the list is empty or not
     const isFounder = useMemo(() => businessInfo.length > 0, [businessInfo]);
