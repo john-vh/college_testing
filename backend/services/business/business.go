@@ -93,6 +93,31 @@ func (h *BusinessHandler) GetBusinesses(ctx context.Context, session *sessions.S
 	})
 }
 
+func (h *BusinessHandler) GetBusinessForId(ctx context.Context, session *sessions.Session, id *uuid.UUID) (*models.Business, error) {
+	userId := session.GetUserId()
+	if userId == nil {
+		return nil, services.NewUnauthenticatedServiceError(nil)
+	}
+
+	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Business, error) {
+		user, err := pq.GetUserForId(ctx, userId)
+		if err != nil {
+			return nil, services.NewUnauthenticatedServiceError(err)
+		}
+		business, err := pq.GetBusinessForId(ctx, id)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return nil, services.NewNotFoundServiceError(err)
+			}
+			return nil, err
+		}
+		if err := AuthorizeBusinessAction(user, BUSINESS_ACTION_READ, business, nil); err != nil {
+			return nil, err
+		}
+		return business, nil
+	})
+}
+
 func (h *BusinessHandler) UpdateBusiness(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, data *models.BusinessUpdate) error {
 	userId := session.GetUserId()
 	if userId == nil {
@@ -203,9 +228,10 @@ func AuthorizeBusinessAction(user *models.User, action BusinessAction, data *mod
 					return nil
 				}
 			case BUSINESS_ACTION_READ:
-				if query != nil &&
+				if (query != nil &&
 					((query.UserId != nil && *query.UserId == user.Id) ||
-						(query.Status != nil && *query.Status == models.BUSINESS_STATUS_ACTIVE)) {
+						(query.Status != nil && *query.Status == models.BUSINESS_STATUS_ACTIVE))) ||
+					(data != nil && data.Status == models.BUSINESS_STATUS_ACTIVE) {
 					return nil
 				}
 			}
