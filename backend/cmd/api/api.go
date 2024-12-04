@@ -68,11 +68,13 @@ func (server *APIServer) Run() error {
 
 	businessHandler := business.NewBusinessHandler(
 		slog.Default(),
-		services.HandleHTTPError,
 		sessionsHandler,
 		userHandler,
+		server.store,
 		notificationsService,
-		server.store)
+		server.cfg.TEMPLATES_DIR,
+		server.cfg.UI_URI,
+		services.HandleHTTPError)
 	businessHandler.RegisterRoutes(router)
 
 	for _, service := range backgroundServices {

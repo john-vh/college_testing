@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Application Withdrawn</title>
+    <title>New Business Requested</title>
   </head>
   <body>
-    <h1>Application Withdrawn</h1>
+    <h1>New Business Requested</h1>
     <p>
       Dear {{.RecipientName}},
       <br/>
       <br/>
-      {{.ApplicantName}} has withdrawn their application to {{.PostName}}. Click <a href="{{.ApplicationLink}}">here</a> for more details.
+      {{.ApplicantName}} has requested a new business, "{{.BusinessName}}", that needs approval.
+      Click <a href="{{.BusinessURI}}">here</a> to view the business.
     </p>
   </body>
 </html>

@@ -15,29 +15,35 @@ import (
 )
 
 type BusinessHandler struct {
-	logger        *slog.Logger
-	sessions      *sessions.SessionsHandler
-	notifications *notifications.NotificationsService
-	users         *user.UserHandler
-	store         *db.PgxStore
-	handleErr     services.ServicesHTTPErrorHandler
+	logger                    *slog.Logger
+	sessions                  *sessions.SessionsHandler
+	users                     *user.UserHandler
+	store                     *db.PgxStore
+	notifications             *notifications.NotificationsService
+	notificationsTemplatesDir string
+	frontendURL               string
+	handleErr                 services.ServicesHTTPErrorHandler
 }
 
 func NewBusinessHandler(
 	logger *slog.Logger,
-	errHandler services.ServicesHTTPErrorHandler,
 	sessions *sessions.SessionsHandler,
 	users *user.UserHandler,
-	notifications *notifications.NotificationsService,
 	store *db.PgxStore,
+	notifications *notifications.NotificationsService,
+	notificationsTemplatesDir string,
+	frontendURL string,
+	errHandler services.ServicesHTTPErrorHandler,
 ) *BusinessHandler {
 	return &BusinessHandler{
-		logger:        logger,
-		sessions:      sessions,
-		notifications: notifications,
-		store:         store,
-		handleErr:     errHandler,
-		users:         users,
+		logger:                    logger,
+		sessions:                  sessions,
+		users:                     users,
+		store:                     store,
+		notifications:             notifications,
+		notificationsTemplatesDir: notificationsTemplatesDir,
+		frontendURL:               frontendURL,
+		handleErr:                 errHandler,
 	}
 }
 
@@ -52,7 +58,7 @@ func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions
 		return nil, err
 	}
 
-	return db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Business, error) {
+	business, err := db.WithTxRet(ctx, h.store, func(pq *db.PgxQueries) (*models.Business, error) {
 		user, err := pq.GetUserForId(ctx, userId)
 		if err != nil {
 			return nil, services.NewUnauthenticatedServiceError(err)
@@ -73,6 +79,48 @@ func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions
 
 		return business, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Asyncronously send notifications
+	go h.sendBusinessRequestedNotifications(business)
+
+	return business, nil
+}
+
+func (h *BusinessHandler) sendBusinessRequestedNotifications(b *models.Business) error {
+	var admins []models.User
+	var owner *models.User
+
+	err := db.WithTx(context.Background(), h.store, func(pq *db.PgxQueries) error {
+		var err error
+		owner, err = pq.GetUserForId(context.Background(), &b.UserId)
+		if err != nil {
+			return err
+		}
+
+		status := models.USER_STATUS_ACTIVE
+		role := models.USER_ROLE_ADMIN
+		admins, err = pq.QueryUsers(context.Background(), &models.UserQueryParams{Status: &status, Role: &role})
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		h.logger.Warn("Failed to enqueue business requested notifications", "err", err)
+		return err
+	}
+
+	for _, admin := range admins {
+		err := h.notifications.Enqueue(context.Background(), h.NewBusinessRequestedAdminNotification(&admin, owner, b))
+		if err != nil {
+			h.logger.Warn("Failed to enqueue business requested admin notification", "err", err)
+		}
+	}
+
+	return nil
 }
 
 func (h *BusinessHandler) GetBusinesses(ctx context.Context, session *sessions.Session, params *models.BusinessQueryParams) ([]models.Business, error) {

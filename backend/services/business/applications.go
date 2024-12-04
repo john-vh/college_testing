@@ -81,7 +81,7 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 				h.logger.Debug("Failed to get post owner while sending email")
 				return
 			}
-			err = h.notifications.EnqueueWithTimeout(context.Background(), h.notifications.NewApplicationReceivedNotification(owner, targetUser, post))
+			err = h.notifications.EnqueueWithTimeout(context.Background(), h.NewApplicationReceivedNotification(owner, targetUser, post))
 			if err != nil {
 				h.logger.Debug("Failed to send application confirmation email", "err", err)
 			}
@@ -337,7 +337,7 @@ func (h *BusinessHandler) sendStatusWithdrawnNotificiation(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	return h.notifications.EnqueueWithTimeout(ctx, h.notifications.NewApplicationWithdrawnNotification(recipient, applicant, application))
+	return h.notifications.EnqueueWithTimeout(ctx, h.NewApplicationWithdrawnNotification(recipient, applicant, application))
 }
 
 func (h *BusinessHandler) sendStatusUpdateNotificiation(ctx context.Context, businessId *uuid.UUID, postId int, userId *uuid.UUID) error {
@@ -358,5 +358,5 @@ func (h *BusinessHandler) sendStatusUpdateNotificiation(ctx context.Context, bus
 	if err != nil {
 		return err
 	}
-	return h.notifications.EnqueueWithTimeout(ctx, h.notifications.NewApplicationUpdatedNotification(applicant, application))
+	return h.notifications.EnqueueWithTimeout(ctx, h.NewApplicationUpdatedNotification(applicant, application))
 }

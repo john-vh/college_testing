@@ -20,6 +20,7 @@ type Notification interface {
 	To() *models.User
 	Subject() string
 	HTML() (string, error)
+	ShouldNotify() bool
 }
 
 func NewNotificationService(mailClient *MailClient, frontendURL, templatesPath string, logger *slog.Logger) *NotificationsService {
@@ -44,7 +45,7 @@ func (ns *NotificationsService) Stop() {
 
 func (ns *NotificationsService) run() {
 	for noti := range ns.dataStream {
-		if !ns.shouldNotify(noti) {
+		if !noti.ShouldNotify() {
 			continue
 		}
 		user := noti.To()
@@ -80,20 +81,4 @@ func (ns *NotificationsService) Enqueue(ctx context.Context, n Notification) err
 		return ctx.Err()
 	}
 	return nil
-}
-
-func (ns *NotificationsService) shouldNotify(n Notification) bool {
-	switch n.(type) {
-	case *ApplicationReceivedNotification:
-		return true
-	case *ApplicationWithdrawnNotification:
-		return n.To().NotifyApplicationWithdrawn
-	case *ApplicationUpdatedNotification:
-		return n.To().NotifyApplicationUpdated
-	}
-
-	ns.logger.Warn("Uncaught notification type", "notification", n)
-
-	return false
-
 }

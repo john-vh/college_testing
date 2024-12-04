@@ -1,6 +1,7 @@
 package models
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -79,6 +80,11 @@ type UserApplication struct {
 	Business  BusinessOverview  `json:"business" db:"business"`
 	Status    ApplicationStatus `json:"status" db:"status"`
 	CreatedAt time.Time         `json:"created_at" db:"created_at"`
+}
+
+func (app *UserApplication) URI(baseURL string) (string, error) {
+	// TODO: Point to a specific application
+	return url.JoinPath(baseURL, "account", "applications")
 }
 
 type UserApplicationQueryParams struct {

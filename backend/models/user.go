@@ -61,6 +61,11 @@ type User struct {
 	Accounts []UserAccount `json:"accounts" db:"accounts"`
 }
 
+type UserQueryParams struct {
+	Role   *UserRole
+	Status *UserStatus
+}
+
 func (u *User) HasRole(role UserRole) bool {
 	return slices.Contains(u.Roles, role)
 }
