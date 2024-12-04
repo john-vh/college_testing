@@ -40,7 +40,7 @@ function useAllPostings() {
     fetchData();
   }, []); // Empty dependency array ensures this runs only once
 
-    return { postingInfo, businessMap };
+  return { postingInfo, businessMap };
 }
 
 
