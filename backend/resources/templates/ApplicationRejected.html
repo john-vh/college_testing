@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Application Status Update</title>
+  </head>
+  <body>
+    <h1>Application Status Update</h1>
+    <p>
+      Dear {{.ApplicantName}},
+      <br/>
+      <br/>
+      Unfortunately, {{.BusinessName}} has decided not to continue with your application to {{.PostName}}. 
+      Click <a href="{{.ApplicationLink}}">here</a> for more details.
+    </p>
+    <p>This is an automated message sent by TestHive {{if .BusinessName}} on behalf of {{.BusinessName}} {{end}}. Please do not respond to this message.</p>
+  </body>
+</html>

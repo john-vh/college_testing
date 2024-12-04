@@ -1,4 +1,4 @@
-CREATE TYPE post_application_status AS ENUM ('pending', 'accepted', 'rejected', 'withdrawn', 'completed');
+CREATE TYPE post_application_status AS ENUM ('pending', 'accepted', 'rejected', 'withdrawn', 'completed', 'cancelled');
 
 CREATE TABLE IF NOT EXISTS post_applications (
   business_id UUID NOT NULL,

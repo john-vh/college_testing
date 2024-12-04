@@ -59,6 +59,9 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 		}
 
 		if !targetUser.IsStudent() {
+			if targetUser.Id == sessionUser.Id {
+				return services.NewUnauthorizedServiceError(nil)
+			}
 			return services.NewDataConflictServiceError(err, "User is not a student")
 		}
 
@@ -69,6 +72,20 @@ func (h *BusinessHandler) CreateApplication(ctx context.Context, session *sessio
 			}
 			return err
 		}
+
+		go func() {
+			owner, err := db.WithTxRet(context.Background(), h.store, func(pq *db.PgxQueries) (*models.User, error) {
+				return pq.GetBusinessOwner(context.Background(), businessId)
+			})
+			if err != nil {
+				h.logger.Debug("Failed to get post owner while sending email")
+				return
+			}
+			err = h.notifications.EnqueueWithTimeout(context.Background(), h.NewApplicationReceivedNotification(owner, targetUser, post))
+			if err != nil {
+				h.logger.Debug("Failed to send application confirmation email", "err", err)
+			}
+		}()
 		return nil
 	})
 }
@@ -80,7 +97,7 @@ func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *ses
 		return services.NewUnauthenticatedServiceError(nil)
 	}
 
-	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		sessionUser, err := pq.GetUserForId(ctx, sessionUserId)
 		if err != nil {
 			return services.NewUnauthorizedServiceError(err)
@@ -121,10 +138,10 @@ func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *ses
 			}
 		case models.APPLICATION_STATUS_COMPLETED:
 			action = APPLICATION_ACTION_COMPLETE
-			if !(application.Status == models.APPLICATION_STATUS_ACCEPTED || application.Status == models.APPLICATION_STATUS_INCOMPLETE) {
+			if !(application.Status == models.APPLICATION_STATUS_ACCEPTED || application.Status == models.APPLICATION_STATUS_CANCELLED) {
 				return services.NewDataConflictServiceError(nil, "Can not complete non-accepted application")
 			}
-		case models.APPLICATION_STATUS_INCOMPLETE:
+		case models.APPLICATION_STATUS_CANCELLED:
 			action = APPLICATION_ACTION_INCOMPLETE
 			if application.Status != models.APPLICATION_STATUS_ACCEPTED {
 				return services.NewDataConflictServiceError(nil, "Can not mark non-accepted application incomplete")
@@ -143,8 +160,20 @@ func (h *BusinessHandler) SetApplicationStatus(ctx context.Context, session *ses
 		}
 
 		return pq.SetApplicationStatus(ctx, businessId, postId, userId, status)
-
 	})
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		if status == models.APPLICATION_STATUS_WITHDRAWN {
+			h.sendStatusWithdrawnNotificiation(context.Background(), businessId, postId, userId)
+		} else {
+			h.sendStatusUpdateNotificiation(context.Background(), businessId, postId, userId)
+		}
+	}()
+
+	return nil
 }
 
 func (h *BusinessHandler) GetPostApplications(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, postId int) (*models.PostApplications, error) {
@@ -284,4 +313,50 @@ func AuthorizeApplicationAction(user *models.User, action ApplicationAction, bus
 	}
 
 	return services.NewUnauthorizedServiceError(nil)
+}
+
+func (h *BusinessHandler) sendStatusWithdrawnNotificiation(ctx context.Context, businessId *uuid.UUID, postId int, userId *uuid.UUID) error {
+	var recipient, applicant *models.User
+	var application *models.UserApplication
+	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		var err error
+		recipient, err = pq.GetBusinessOwner(ctx, businessId)
+		if err != nil {
+			return err
+		}
+		applicant, err = pq.GetUserForId(ctx, userId)
+		if err != nil {
+			return err
+		}
+		application, err = pq.GetApplication(ctx, businessId, postId, userId)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return h.notifications.EnqueueWithTimeout(ctx, h.NewApplicationWithdrawnNotification(recipient, applicant, application))
+}
+
+func (h *BusinessHandler) sendStatusUpdateNotificiation(ctx context.Context, businessId *uuid.UUID, postId int, userId *uuid.UUID) error {
+	var applicant *models.User
+	var application *models.UserApplication
+	err := db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		var err error
+		applicant, err = pq.GetUserForId(ctx, userId)
+		if err != nil {
+			return err
+		}
+		application, err = pq.GetApplication(ctx, businessId, postId, userId)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return h.notifications.EnqueueWithTimeout(ctx, h.NewApplicationUpdatedNotification(applicant, application))
 }

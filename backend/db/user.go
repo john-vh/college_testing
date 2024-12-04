@@ -10,7 +10,7 @@ import (
 	"github.com/john-vh/college_testing/backend/services"
 )
 
-func (pq *PgxQueries) CreateUser(ctx context.Context, data *models.UserCreate) (*uuid.UUID, error) {
+func (pq *PgxQueries) CreateUser(ctx context.Context) (*uuid.UUID, error) {
 	userId, err := uuid.NewRandom()
 	if err != nil {
 		return nil, services.NewInternalServiceError(err)
@@ -29,6 +29,30 @@ func (pq *PgxQueries) CreateUser(ctx context.Context, data *models.UserCreate) (
 	}
 
 	return &userId, nil
+}
+
+func (pq *PgxQueries) UpdateUser(ctx context.Context, id *uuid.UUID, data *models.UserUpdate) error {
+	res, err := pq.tx.Exec(ctx, `
+    UPDATE users SET
+    (notify_application_updated, notify_application_received, notify_application_withdrawn) = 
+    (@notifyApplicationUpdated, @notifyApplicationReceived, @notifyApplicationWithdrawn)
+    WHERE users.id = @id 
+  `, pgx.NamedArgs{
+		"id":                         id,
+		"notifyApplicationUpdated":   data.NotifyApplicationUpdated,
+		"notifyApplicationReceived":  data.NotifyApplicationReceived,
+		"notifyApplicationWithdrawn": data.NotifyApplicationWithdrawn,
+	})
+
+	if err != nil {
+		return handlePgxError(err)
+	}
+
+	if res.RowsAffected() == 0 {
+		return ErrNoRows
+	}
+
+	return nil
 }
 
 func (pq *PgxQueries) SaveOpenIDAcct(ctx context.Context, openIDProvider string, data *models.OpenIDClaims) error {
@@ -112,7 +136,11 @@ func (pq *PgxQueries) GetUserForId(ctx context.Context, id *uuid.UUID) (*models.
        FROM user_accounts
        LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id 
         WHERE user_accounts.user_id = @userId
-      ) as accounts
+      ) as accounts,
+      (SELECT COALESCE(json_agg(user_roles.role) FILTER (WHERE user_roles.user_id IS NOT NULL), '[]')
+       FROM user_roles 
+       WHERE user_roles.user_id = @userId
+      ) as roles 
     FROM users
     LEFT JOIN user_accounts ON users.id = user_accounts.user_id AND user_accounts.is_primary = TRUE
     LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id
@@ -130,24 +158,41 @@ func (pq *PgxQueries) GetUserForId(ctx context.Context, id *uuid.UUID) (*models.
 		fmt.Println(err)
 		return nil, handlePgxError(err)
 	}
+	return user, nil
+}
 
-	rows, err = pq.tx.Query(ctx, `
-      SELECT user_roles.role 
-      FROM user_roles 
-      WHERE user_roles.user_id = @userId
-    `, pgx.NamedArgs{
-		"userId": id,
-	})
+func (pq *PgxQueries) QueryUsers(ctx context.Context, params *models.UserQueryParams) ([]models.User, error) {
+	rows, err := pq.tx.Query(ctx, `
+    SELECT 
+      users.*, accounts.email, accounts.email_verified, accounts.name,
+      (SELECT COALESCE(json_agg(accounts.*) FILTER (WHERE accounts.id IS NOT NULL), '[]')
+       FROM user_accounts
+       LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id 
+        WHERE user_accounts.user_id = @userId
+      ) as accounts,
+      (SELECT COALESCE(json_agg(user_roles.role) FILTER (WHERE user_roles.user_id IS NOT NULL), '[]')
+       FROM user_roles 
+       WHERE user_roles.user_id = @userId
+      ) as roles 
+    FROM users
+    LEFT JOIN user_accounts ON users.id = user_accounts.user_id AND user_accounts.is_primary = TRUE
+    LEFT JOIN accounts ON user_accounts.account_provider = accounts.provider AND user_accounts.account_id = accounts.id
+    LEFT JOIN user_roles ON users.id = user_roles.user_id
+    WHERE (@role::user_role IS NULL OR @role = user_roles.role)
+    AND (@status::user_status IS NULL OR @status = users.status)
+    `,
+		pgx.NamedArgs{
+			"status": params.Status,
+			"role":   params.Role,
+		})
+	if err != nil {
+		return nil, handlePgxError(err)
+	}
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.User])
 	if err != nil {
 		fmt.Println(err)
 		return nil, handlePgxError(err)
 	}
-
-	var role models.UserRole
-	pgx.ForEachRow(rows, []any{&role}, func() error {
-		user.Roles = append(user.Roles, role)
-
-		return nil
-	})
-	return user, nil
+	return users, nil
 }

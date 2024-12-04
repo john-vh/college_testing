@@ -6,7 +6,6 @@ toolchain go1.22.8
 
 require (
 	github.com/coreos/go-oidc/v3 v3.11.0
-	github.com/go-logr/logr v1.4.2
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
@@ -39,5 +38,5 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/text v0.18.0
 )
