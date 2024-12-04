@@ -106,6 +106,7 @@ func (auth *AuthHandler) handleLoginCallback(w http.ResponseWriter, r *http.Requ
 
 	linkedUser, err := auth.GetLinkedUser(r.Context(), provider, &claims)
 	if err != nil {
+		auth.logger.Error("Error checking for linked user", "err", err)
 		return err
 	}
 	if userId != nil && (linkedUser == nil || *userId == *linkedUser) {

@@ -27,6 +27,13 @@ func (pq *PgxQueries) CreateUser(ctx context.Context) (*uuid.UUID, error) {
 	if err != nil {
 		return nil, handlePgxError(err)
 	}
+	_, err = pq.tx.Exec(ctx, `
+    INSERT INTO user_roles (user_id, role) VALUES (@userId, @role)
+    `,
+		pgx.NamedArgs{
+			"userId": userId,
+			"role":   models.USER_ROLE_USER,
+		})
 
 	return &userId, nil
 }

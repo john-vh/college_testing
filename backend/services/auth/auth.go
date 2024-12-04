@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -104,6 +105,9 @@ func (auth *AuthHandler) GetLinkedUser(ctx context.Context, openidProvider strin
 	return db.WithTxRet(ctx, auth.store, func(pq *db.PgxQueries) (*uuid.UUID, error) {
 		linkedUserId, err := pq.GetLinkedUserId(ctx, openidProvider, acctData.Id)
 		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return linkedUserId, nil
