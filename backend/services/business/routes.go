@@ -24,6 +24,7 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /posts", h.handleErr(h.handleGetActivePosts))
 
 	router.HandleFunc("GET /businesses", h.handleErr(h.handleGetBusinesses))
+	router.HandleFunc("GET /businesses/{businessId}", h.handleErr(h.handleGetBusiness))
 	router.HandleFunc("GET /users/0/businesses", h.handleErr(h.handleGetUserBusinesses))
 	router.HandleFunc("GET /users/0/posts", h.handleErr(h.handleGetUserPosts))
 	router.HandleFunc("GET /users/0/applications", h.handleErr(h.handleGetUserApplications))
@@ -191,6 +192,27 @@ func (h *BusinessHandler) handleGetBusinesses(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(businesses)
+	return nil
+}
+
+func (h *BusinessHandler) handleGetBusiness(w http.ResponseWriter, r *http.Request) error {
+	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+
+	business, err := h.GetBusinessForId(r.Context(), session, &businessId)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(business)
 	return nil
 }
 
