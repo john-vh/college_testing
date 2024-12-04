@@ -5,12 +5,12 @@ import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { InfoPage, PageTag } from "../components/InfoPage.tsx";
 import { Sidebar } from "../components/Sidebar.tsx";
 import { useIsFounder } from "../hooks/useBusinessInfo.ts";
+import { useNavigate } from "react-router-dom";
 
 export const Account = () => {
-    const [currentPage, setCurrentPage] = React.useState<PageTag>(PageTag.Account);
-    const role = useGetRole();
+    const navigate = useNavigate();
     const handlePageChange = (page: PageTag) => {
-        setCurrentPage(page);
+        navigate("/" + page);
     };
 
     return (
@@ -18,7 +18,7 @@ export const Account = () => {
             <LandingNavbar showAccount={false} />
             <div className='App'>
                 <Sidebar handlePageChange={handlePageChange} />
-                <InfoPage page={currentPage} role={role} />
+                <InfoPage />
             </div>
         </div>
     );

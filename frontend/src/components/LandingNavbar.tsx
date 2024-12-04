@@ -6,9 +6,10 @@ import { Role } from "./InfoPage.tsx";
 
 interface LandingBarProps {
     showAccount?: boolean;
+    showHome?: boolean;
 }
 
-export const LandingNavbar = ({ showAccount = true }: LandingBarProps) => {
+export const LandingNavbar = ({ showAccount = true, showHome = true }: LandingBarProps) => {
     const navigate = useNavigate();
     const role = useGetRole();
 
@@ -22,10 +23,11 @@ export const LandingNavbar = ({ showAccount = true }: LandingBarProps) => {
                 <Navbar.Heading><h2>College User Testing</h2></Navbar.Heading>
             </Navbar.Group>
             <Navbar.Group align={Alignment.RIGHT}>
-                <Navbar.Divider />
-                {showAccount ? <Button className="bp5-minimal" icon="user" text="Account" onClick={handleClick} /> : <Button className="bp5-minimal" icon="home" text="Home" onClick={handleClick} />}
-                {(!showAccount && role === Role.Admin) && <Tag icon="user" large intent="success">Account</Tag>}
-                {(!showAccount && role === Role.Founder) && <Tag icon="user" large intent="primary" >Account</Tag>}
+                {showHome && <Navbar.Divider />}
+                {showHome && (showAccount ? <Button className="bp5-minimal" icon="user" text="Account" onClick={handleClick} /> : <Button className="bp5-minimal" icon="home" text="Home" onClick={handleClick} />)}
+                {(!showAccount && role === Role.Admin) && <Tag round icon="user" large intent="success">Admin</Tag>}
+                {(!showAccount && role === Role.Founder) && <Tag round icon="user" large intent="primary" >Founder</Tag>}
+                {(!showAccount && role === Role.User) && <Tag round icon="user" large >Tester</Tag>}
             </Navbar.Group>
         </Navbar>
     );
