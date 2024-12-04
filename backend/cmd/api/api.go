@@ -35,6 +35,8 @@ func NewAPIServer(addr string, cfg env.Config, store *db.PgxStore, cache *redis.
 
 func (server *APIServer) Run() error {
 	router := http.NewServeMux()
+	apirouter := http.NewServeMux()
+	apirouter.Handle("/api/", http.StripPrefix("/api", router))
 
 	backgroundServices := make([]services.BackgroundService, 0)
 
@@ -81,7 +83,7 @@ func (server *APIServer) Run() error {
 		service.Start()
 	}
 
-	res := http.ListenAndServe(server.addr, services.RequestLoggerMiddleWare(slog.Default())(services.CORSMiddleware(router)))
+	res := http.ListenAndServe(server.addr, services.RequestLoggerMiddleWare(slog.Default())(services.CORSMiddleware(apirouter)))
 
 	for _, service := range backgroundServices {
 		service.Stop()
