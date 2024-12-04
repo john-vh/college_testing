@@ -1,15 +1,36 @@
-import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, Divider } from "@blueprintjs/core";
-import React, { useState } from 'react';
+import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, InputGroup, NonIdealState } from "@blueprintjs/core";
+import React, { useState, useMemo } from 'react';
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { useNavigate } from 'react-router-dom';
-import useAllPostings from '../hooks/useAllPostings.ts';
+import useAllPostings, { PostingInfo } from '../hooks/useAllPostings.ts';
+import useAccountInfo from "../hooks/useAccountInfo.ts";
 
 export const Landing = () => {
+    const account = useAccountInfo();
+
+    const handleLogin = () => {
+        window.location.href = "http://127.0.0.1:8080/auth/google";
+    }
+
+    if (account == null) {
+        return (
+            <div>
+                <LandingNavbar showHome={false} />
+                <div className='App' style={{ margin: "50px" }}>
+                    <NonIdealState
+                        icon="log-in"
+                        title="Please log in"
+                        description="In order to use TestHive, please log in with a Google account"
+                        action={<Button onClick={() => handleLogin()}>Log in</Button>}
+                    />
+                </div>
+            </div>
+        );
+    }
     return (
         <div>
             <LandingNavbar />
             <div className='App'>
-                <FilterBar />
                 <TestList />
             </div>
         </div>
@@ -19,15 +40,32 @@ export const Landing = () => {
 
 const TestList = () => {
     const posts = useAllPostings();
-    //const items = useAllPostings();
-
     const navigate = useNavigate();
-    const handleClick = (id) => { navigate(`/posting/${id}`); };
+
+    const handleClick = (post: PostingInfo) => {
+        navigate(`/posting/${post.id}`, { state: { post } });
+    };
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredPosts = useMemo(() => {
+        return posts?.filter(post =>
+            post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            post.desc.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [posts, searchQuery]);
 
     if (posts != null) {
         return (
             <div className='Test-list'>
-                {posts.map((post, index) => (
+                <div style={{ position: "absolute" }}>
+                    <InputGroup
+                        placeholder="Search..."
+                        type="search"
+                        value={searchQuery}
+                        onValueChange={(value) => setSearchQuery(value)}
+                    />
+                </div>
+                <div style={{ paddingBottom: "50px" }} />
+                {filteredPosts != null && filteredPosts.map((post, index) => (
                     <div className='Card'>
                         <Card interactive={true} >
                             <div className='Flex'>
@@ -42,7 +80,7 @@ const TestList = () => {
                             <p className="bp5-text-muted">{post.desc}</p>
                             <div className='Flex align-right'>
                                 <div className="gap">Compensation: $5</div>
-                                <Button intent="primary" onClick={() => handleClick(post.id)}>Details</Button>
+                                <Button intent="primary" onClick={() => handleClick(post)}>Details</Button>
                             </div>
                         </Card>
                     </div>

@@ -1,56 +1,175 @@
-import { Button, Card, FormGroup, H3, H5, Icon, InputGroup } from "@blueprintjs/core";
-import React, { useEffect, useState } from "react";
-import { LandingNavbar } from "../components/LandingNavbar.tsx";
-import { usePostingInfo } from "../hooks/usePostingInfo.ts";
-import { useBusinessIds } from "../hooks/useBusinessIds.ts";
+import { Button, Card, FormGroup, H3, InputGroup, Intent, Spinner, Tag } from "@blueprintjs/core";
+import { Toaster, Position } from "@blueprintjs/core";
+import React, { useMemo, useState } from "react";
 import { AddPosting } from "./AddPosting.tsx";
+import { usePostingInfo } from "../hooks/usePostingInfo.ts";
+import { useActivatePosting } from "../hooks/useActivatePosting.ts";
+import { useDeactivatePosting } from "../hooks/useDeactivatePosting.ts";
+import { PostingInfo } from "../hooks/useAllPostings.ts";
 
+const toaster = Toaster.create({
+    position: Position.TOP,
+});
 
-export const PostingInfo = () => {
-    const data = usePostingInfo();
-    const business_options = new Set(data.map((post) => post.business_id));
+export const PostingInfoPage: React.FC = () => {
+    const { data = [], business_map, error, fetchPostingInfo } = usePostingInfo();
+    const { activatePosting, loading: activateLoading } = useActivatePosting();
+    const { deactivatePosting, loading: deactivateLoading } = useDeactivatePosting();
+    const [showAddPosting, setShowAddPosting] = useState(false);
 
-    const [postingAdd, setPostingAdd] = useState(false);
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const addNewPosting = () => {
-        setPostingAdd(true); // Change state to show the Add Business page
+    const businessOptions = useMemo(
+        () => [...new Set(data.map((post) => post.business_id))],
+        [data]
+    );
+
+    const sortedData = useMemo(
+        () => [...data].sort((a, b) => a.title.localeCompare(b.title)),
+        [data]
+    );
+
+    const handleStatusChange = async (posting: PostingInfo) => {
+        try {
+            if (posting.status === "disabled") {
+                await activatePosting(posting);
+                toaster.show({
+                    message: "Posting activated successfully",
+                    intent: Intent.SUCCESS,
+                });
+            } else {
+                await deactivatePosting(posting);
+                toaster.show({
+                    message: "Posting deactivated successfully",
+                    intent: Intent.SUCCESS,
+                });
+            }
+            await delay(100);
+            await fetchPostingInfo();
+        } catch (err) {
+            toaster.show({
+                message: `Error changing posting status: ${err instanceof Error ? err.message : 'Unknown error'}`,
+                intent: Intent.DANGER,
+            });
+        }
     };
 
-    if (postingAdd) {
-        return <AddPosting businesses={business_options} setPostingAdd={setPostingAdd} />
+    const handleAddNewPosting = async () => {
+        setShowAddPosting(true);
+        try {
+            console.log("oops too early");
+            await fetchPostingInfo();
+        } catch (err) {
+            toaster.show({
+                message: "Error refreshing posting list",
+                intent: Intent.DANGER,
+            });
+        }
+    };
+
+    if (error) {
+        return (
+            <Card style={{ margin: "200px" }} elevation={2}>
+                <H3 style={{ color: Intent.DANGER }}>Error loading postings</H3>
+                <p>{error}</p>
+            </Card>
+        );
     }
 
-    if (data.length > 0) {
+    if (showAddPosting) {
         return (
-            <div style={{ width: '100%', padding: '20px' }}>
-                <Button
-                    intent="primary"
-                    large={true}
-                    style={{ width: "100%", marginBottom: "20px" }}
-                    onClick={() => addNewPosting()}
-                >
-                    Add Posting
-                </Button>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {data.map((posting, _) => (
-                        <Card interactive={true} >
-                            <H3>Posting Information</H3>
-                            <FormGroup label="Title"
-                                labelFor="title" >
-                                <InputGroup id="title" placeholder={posting.title} />
-                            </FormGroup>
-                            <FormGroup label="Description"
-                                labelFor="desc" >
-                                <InputGroup id="desc" placeholder={posting.desc} />
-                            </FormGroup>
-                            <FormGroup label="Business"
-                                labelFor="business" >
-                                <InputGroup id="business" placeholder={posting.business_id} />
-                            </FormGroup>
-                            <Button>Manage posting</Button>
-                        </Card>
-                    ))}
-                </div>
-            </div>);
+            <AddPosting
+                businesses={businessOptions}
+                setPostingAdd={setShowAddPosting}
+                fetchData={fetchPostingInfo}
+            />
+        );
     }
-}
+
+    return (
+        <div className="content">
+            <Button
+                intent={Intent.PRIMARY}
+                large={true}
+                style={{ width: "100%", marginBottom: "20px" }}
+                onClick={handleAddNewPosting}
+            >
+                Add Posting
+            </Button>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                {sortedData.map((posting) => (
+                    <Card
+                        key={posting.id}
+                        interactive={true}
+                        elevation={2}
+                        style={{ position: "relative" }}
+                    >
+                        {/* {(activateLoading || deactivateLoading) && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Spinner size={50} />
+                            </div>
+                        )} */}
+
+                        <div className="Flex" style={{ justifyContent: "space-between" }}>
+                            <H3>Posting Information</H3>
+                            <Tag round intent={posting.status === "active" ? Intent.SUCCESS : Intent.DANGER}>{posting.status.toLocaleUpperCase()}</Tag>
+                        </div>
+
+                        <FormGroup label="Title" labelFor={`title-${posting.id}`}>
+                            <InputGroup
+                                id={`title-${posting.id}`}
+                                value={posting.title}
+                                readOnly
+                                fill
+                            />
+                        </FormGroup>
+
+                        <FormGroup label="Description" labelFor={`desc-${posting.id}`}>
+                            <InputGroup
+                                asyncControl
+                                id={`desc-${posting.id}`}
+                                value={posting.desc}
+                                readOnly
+                                fill
+                            />
+                        </FormGroup>
+
+                        <FormGroup label="Business" labelFor={`business-${posting.id}`}>
+                            <InputGroup
+                                id={`business-${posting.id}`}
+                                value={business_map.get(posting.business_id)?.name}
+                                readOnly
+                                fill
+                            />
+                        </FormGroup>
+
+                        <FormGroup label="Id" labelFor={`id-${posting.id}`}>
+                            <InputGroup
+                                id={`id-${posting.id}`}
+                                value={posting.id.toString()}
+                                readOnly
+                                fill
+                            />
+                        </FormGroup>
+
+                        <Button
+                            intent={posting.status === "disabled" ? Intent.SUCCESS : Intent.DANGER}
+                            onClick={() => handleStatusChange(posting)}
+                            disabled={activateLoading || deactivateLoading}
+                        >
+                            {posting.status === "disabled" ? "Activate posting" : "Deactivate posting"}
+                        </Button>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+};
