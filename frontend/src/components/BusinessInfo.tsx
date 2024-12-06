@@ -35,8 +35,11 @@ export const BusinessInfoPage = () => {
         setNewData(newData);
     }
 
-    const handleSaveBusiness = (entry: BusinessInfo) => {
+    const handleSaveBusiness = (entry: BusinessInfo, index: number) => {
         updateBusiness(entry);
+        const newIsReadonly = [...isReadonly];
+        newIsReadonly[index] = true;
+        setIsReadonly(newIsReadonly);
         console.log("updated");
     }
 
@@ -69,7 +72,7 @@ export const BusinessInfoPage = () => {
     }
 
     if (businessAdd) {
-        return <AddBusiness setBusinessAdd={setBusinessAdd} />
+        return <AddBusiness setBusinessAdd={setBusinessAdd} fetchData={fetchData} />
     }
 
     return (
@@ -103,7 +106,7 @@ export const BusinessInfoPage = () => {
                             <TextArea asyncControl id="desc" onChange={(e) => handleInputChange(index, "desc", e.target.value)} value={entry.desc} readOnly={isReadonly[index]} fill />
                         </FormGroup>
                         {(isAdmin && entry.status === "pending") && <Button intent="success" style={{ marginRight: "10px" }} onClick={() => handleApproveBusiness(entry.id)}>Approve business</Button>}
-                        {isReadonly[index] ? <Button onClick={() => handleEditBusiness(index)}>Manage business</Button> : <Button onClick={() => handleSaveBusiness(entry)}>Save changes</Button>}
+                        {isReadonly[index] ? <Button onClick={() => handleEditBusiness(index)}>Manage business</Button> : <Button onClick={() => handleSaveBusiness(entry, index)}>Save changes</Button>}
                     </Card>
                 ))}
             </div>

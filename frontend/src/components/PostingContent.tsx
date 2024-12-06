@@ -1,14 +1,17 @@
-import { Button, Card, OverlayToaster, Classes, Checkbox, H2, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, Divider } from "@blueprintjs/core";
+import { Button, Card, OverlayToaster, Classes, Checkbox, H2, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, Divider, Tag } from "@blueprintjs/core";
 import { useEffect } from "react";
 import { PostingInfo } from "../hooks/useAllPostings";
 import React from "react";
 import { useApplyPosting } from "../hooks/useApplyPosting.ts";
+import { formatDate } from "./UserApplicationInfo.tsx";
+import { BusinessInfo } from "../hooks/useBusinessInfo.ts";
 
 interface PostingContentProps {
     post: PostingInfo
+    businessMap: Map<string, BusinessInfo>
 }
 
-export const PostingContent = ({ post }: PostingContentProps) => {
+export const PostingContent = ({ post, businessMap }: PostingContentProps) => {
     // const myToaster = OverlayToaster.createAsync({ position: "bottom-right" });
     const applyPosting = useApplyPosting();
 
@@ -16,6 +19,8 @@ export const PostingContent = ({ post }: PostingContentProps) => {
         applyPosting(post, "");
         // myToaster.then(toaster => toaster.show({ message: "Startup notified of interest!", intent: "success" }));
     }
+
+    const businessInfo = businessMap.get(post.business_id);
 
     return (
         <div className="Posting">
@@ -25,7 +30,10 @@ export const PostingContent = ({ post }: PostingContentProps) => {
                         <div className='icon-p'>
                             <Icon icon="bookmark" size={70} />
                         </div>
-                        <H2>{post.title}</H2>
+                        <div style={{ justifyContent: "space-between" }}>
+                            <H2>{post.title}</H2>
+                            <Tag minimal>{formatDate(post.created_at)}</Tag>
+                        </div>
                     </div>
                 </div>
                 <p><strong>Description</strong></p>
@@ -38,7 +46,8 @@ export const PostingContent = ({ post }: PostingContentProps) => {
                             <Icon icon="user" size={30} />
                         </div>
                         <div>
-                            <strong>Founder Name</strong>
+                            <strong>{businessInfo?.name}</strong>
+                            <p>{businessInfo?.desc}</p>
                         </div>
                     </div>
                     <div style={{ padding: '10px', minWidth: '130px' }}>
