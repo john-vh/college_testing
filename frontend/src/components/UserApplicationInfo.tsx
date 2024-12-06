@@ -11,26 +11,30 @@ const toaster = Toaster.create({
 });
 
 export const UserApplicationInfoPage: React.FC = () => {
-    const data = useUserApplicationInfo();
+    const { applicationInfo, fetchData } = useUserApplicationInfo();
     const account = useAccountInfo();
     const withdrawApplication = useWithdrawApplication();
 
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     const sortedData = useMemo(
         () =>
-            [...data]
+            [...applicationInfo]
                 .filter((entry) => entry.status !== "withdrawn")
                 .sort((a, b) => -a.created_at.localeCompare(b.created_at)),
-        [data]
+        [applicationInfo]
     );
 
     if (account == null) {
         return <AccountInfo />
     }
 
-    const handleWithdraw = (application: UserApplicationInfo) => {
+    const handleWithdraw = async (application: UserApplicationInfo) => {
         const { business: { id: business_id }, post: { id: post_id } } = application;
         const user_id = account?.id;
         withdrawApplication({ business_id, post_id, user_id });
+        await delay(100);
+        await fetchData();
     }
 
     return (
@@ -70,7 +74,7 @@ export const UserApplicationInfoPage: React.FC = () => {
 };
 
 
-function formatDate(dateString: string): string {
+export function formatDate(dateString: string): string {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
         dateStyle: 'medium', // Example: Nov 15, 2024

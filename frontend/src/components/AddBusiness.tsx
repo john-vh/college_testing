@@ -15,12 +15,15 @@ import { useCreateBusiness, NewBusinessInfo } from "../hooks/useCreateBusiness.t
 
 interface AddBusinessProps {
     setBusinessAdd: (value: boolean) => void;
+    fetchData: () => Promise<void>;
 }
 
-export const AddBusiness = ({ setBusinessAdd }: AddBusinessProps) => {
+export const AddBusiness = ({ setBusinessAdd, fetchData }: AddBusinessProps) => {
     const { createBusiness } = useCreateBusiness();
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<Partial<Record<keyof NewBusinessInfo, string>>>({});
+
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const [userInfo, setUserInfo] = useState<NewBusinessInfo>({
         name: "",
@@ -70,6 +73,8 @@ export const AddBusiness = ({ setBusinessAdd }: AddBusinessProps) => {
         try {
             setIsLoading(true);
             await createBusiness(userInfo);
+            await delay(100);
+            await fetchData();
             setBusinessAdd(false);
         } catch (error) {
             console.error("Failed to create business:", error);

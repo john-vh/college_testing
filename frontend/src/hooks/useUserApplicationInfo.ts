@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface UserApplicationInfo {
   post: UserPostingInfo,
@@ -24,23 +24,24 @@ interface UserBusinessInfo {
   created_at: string
 }
 
-export function useUserApplicationInfo(): UserApplicationInfo[] {
+export function useUserApplicationInfo() {
   const [applicationInfo, setApplicationInfo] = useState<UserApplicationInfo[]>([]);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/applications`, { mode: "cors", credentials: 'include' });
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        setApplicationInfo(await response.json())
-      } catch (error) {
-        console.log(error);
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/applications`, { mode: "cors", credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
+      setApplicationInfo(await response.json())
+    } catch (error) {
+      console.log(error);
     }
-    fetchData();
   }, []); // Empty dependency array ensures this runs only once
 
-  return applicationInfo;
+  useState(() => {
+    fetchData();
+  });
+
+  return { applicationInfo, fetchData };
 }
