@@ -135,7 +135,7 @@ func (pq *PgxQueries) UpdateBusiness(ctx context.Context, businessId *uuid.UUID,
 	}
 
 	if res.RowsAffected() == 0 {
-		return handlePgxError(ErrNoRows)
+		return ErrNoRows
 	}
 
 	return nil
@@ -156,7 +156,28 @@ func (pq *PgxQueries) SetBusinessStatus(ctx context.Context, businessId *uuid.UU
 	}
 
 	if res.RowsAffected() == 0 {
-		return handlePgxError(ErrNoRows)
+		return ErrNoRows
+	}
+
+	return nil
+}
+
+func (pq *PgxQueries) SetBusinessLogo(ctx context.Context, businessId *uuid.UUID, url string) error {
+	res, err := pq.tx.Exec(ctx, `
+    UPDATE businesses SET
+    logo_url = @url
+    WHERE businesses.id = @businessId
+    `, pgx.NamedArgs{
+		"businessId": businessId,
+		"url":        url,
+	})
+
+	if err != nil {
+		return handlePgxError(err)
+	}
+
+	if res.RowsAffected() == 0 {
+		return ErrNoRows
 	}
 
 	return nil

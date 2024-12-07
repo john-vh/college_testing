@@ -15,10 +15,17 @@ const (
 	BUSINESS_STATUS_DISABLED BusinessStatus = "disabled"
 )
 
+type businessMeta struct {
+	Id        uuid.UUID      `json:"id" db:"id"`
+	Status    BusinessStatus `json:"status" db:"status"`
+	CreatedAt time.Time      `json:"created_at" db:"created_at"`
+	LogoUrl   *string        `json:"logo_url" db:"logo_url"`
+}
+
 type BusinessUpdate struct {
-	Website string `json:"website" db:"website" validate:"required,http_url"`
-	Desc    string `json:"desc" db:"description" validate:"required,min=8,max=256"`
 	Name    string `json:"name" db:"name" validate:"required,min=3,max=64"`
+	Desc    string `json:"desc" db:"description" validate:"required,min=8,max=256"`
+	Website string `json:"website" db:"website" validate:"required,http_url"`
 }
 
 type BusinessCreate struct {
@@ -26,18 +33,14 @@ type BusinessCreate struct {
 }
 
 type BusinessOverview struct {
-	Id        uuid.UUID      `json:"id" db:"id"`
-	Name      string         `json:"name" db:"name"`
-	Status    BusinessStatus `json:"status" db:"status"`
-	CreatedAt time.Time      `json:"created_at" db:"created_at"`
+	businessMeta
+	Name string `json:"name" db:"name"`
 }
 
 type Business struct {
+	businessMeta
 	BusinessCreate
-	Id        uuid.UUID      `json:"id" db:"id"`
-	UserId    uuid.UUID      `json:"user_id" db:"user_id"`
-	Status    BusinessStatus `json:"status" db:"status"`
-	CreatedAt time.Time      `json:"created_at" db:"created_at"`
+	UserId uuid.UUID `json:"user_id" db:"user_id"`
 }
 
 type BusinessQueryParams struct {

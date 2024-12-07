@@ -3,6 +3,7 @@ package business
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -122,11 +123,28 @@ func (h *BusinessHandler) setBusinessImage(ctx context.Context, session *session
 			return err
 		}
 		ext := filepath.Ext(filename)
-
-		err = h.filestore.UploadObject(businessId.String()+ext, f)
+		key := fmt.Sprintf("%v%v", businessId.String(), ext)
+		prevKey := ""
+		if business.LogoUrl != nil {
+			prevKey = h.filestore.GetKey(*business.LogoUrl)
+		}
+		url := h.filestore.GetURI(key)
+		err = pq.SetBusinessLogo(ctx, businessId, url)
+		if err != nil {
+			return err
+		}
+		err = h.filestore.UploadObject(key, f)
 		if err != nil {
 			h.logger.Warn("Failed to upload image for business", "err", err)
 			return err
+		}
+
+		if prevKey != key {
+			err = h.filestore.DeleteObject(prevKey)
+			if err != nil {
+				h.logger.Warn("Failed to delete old business logo", "err", err)
+				return err
+			}
 		}
 
 		return nil
