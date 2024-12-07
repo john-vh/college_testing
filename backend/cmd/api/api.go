@@ -69,7 +69,7 @@ func (server *APIServer) Run() error {
 	userHandler := user.NewUserHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	userHandler.RegisterRoutes(router)
 
-	imageS3, err := filestore.NewS3ImageStore(server.cfg.IMAGES_S3_BUCKET, server.cfg.AWS_REGION)
+	imageS3, err := filestore.NewS3ImageStore(server.cfg.AWS_PROFILE, server.cfg.IMAGES_S3_BUCKET, server.cfg.AWS_REGION)
 	if err != nil {
 		return err
 	}

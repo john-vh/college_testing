@@ -18,8 +18,13 @@ type S3Store struct {
 	region   *string
 }
 
-func NewS3ImageStore(bucket string, region string) (*S3Store, error) {
-	s, err := session.NewSession(aws.NewConfig().WithRegion(region))
+func NewS3ImageStore(profile string, bucket string, region string) (*S3Store, error) {
+	s, err := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Region: aws.String(region),
+		},
+		Profile: profile,
+	})
 	if err != nil {
 		return nil, err
 	}
