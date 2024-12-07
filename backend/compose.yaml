@@ -16,6 +16,7 @@ services:
       - base.env
     volumes:
       - ./cmd/migrate/migrations:/migrations
+      - $HOME/.aws:/root/.aws:ro
   db:
     image: postgres:12.19-alpine3.20
     restart: always
@@ -58,6 +59,10 @@ secrets:
     file: ./postgres_user.secret
   postgres_password:
     file: ./postgres_password.secret
+  aws_creds:
+    file: $HOME/.aws/credentials
+  aws_cfg:
+    file: $HOME/.aws/config
 
 volumes:
   pgdata:
