@@ -139,7 +139,7 @@ func (h *BusinessHandler) setBusinessImage(ctx context.Context, session *session
 			return err
 		}
 
-		if prevKey != key {
+		if prevKey != key && prevKey != "" {
 			err = h.filestore.DeleteObject(prevKey)
 			if err != nil {
 				h.logger.Warn("Failed to delete old business logo", "err", err)
