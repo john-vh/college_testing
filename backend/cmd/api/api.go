@@ -8,6 +8,7 @@ import (
 	"github.com/john-vh/college_testing/backend/cache"
 	"github.com/john-vh/college_testing/backend/db"
 	"github.com/john-vh/college_testing/backend/env"
+	"github.com/john-vh/college_testing/backend/filestore"
 	"github.com/john-vh/college_testing/backend/services"
 	"github.com/john-vh/college_testing/backend/services/auth"
 	"github.com/john-vh/college_testing/backend/services/business"
@@ -68,11 +69,17 @@ func (server *APIServer) Run() error {
 	userHandler := user.NewUserHandler(slog.Default(), services.HandleHTTPError, sessionsHandler, server.store)
 	userHandler.RegisterRoutes(router)
 
+	imageS3, err := filestore.NewS3ImageStore(server.cfg.IMAGES_S3_BUCKET, server.cfg.AWS_REGION)
+	if err != nil {
+		return err
+	}
+
 	businessHandler := business.NewBusinessHandler(
 		slog.Default(),
 		sessionsHandler,
 		userHandler,
 		server.store,
+		imageS3,
 		notificationsService,
 		server.cfg.TEMPLATES_DIR,
 		server.cfg.UI_URI,

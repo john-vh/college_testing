@@ -2,8 +2,11 @@ package business
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/models"
@@ -30,6 +33,7 @@ func (h *BusinessHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("GET /users/0/applications", h.handleErr(h.handleGetUserApplications))
 	router.HandleFunc("POST /users/0/businesses", h.handleErr(h.handleRequestBusiness))
 	router.HandleFunc("PATCH /businesses/{businessId}", h.handleErr(h.handleUpdateBusiness))
+	router.HandleFunc("POST /businesses/{businessId}/upload-image", h.handleErr(h.handleUploadBusinessImage))
 
 	router.HandleFunc("POST /businesses/{businessId}/posts", h.handleErr(h.handleCreatePost))
 	router.HandleFunc("PATCH /businesses/{businessId}/posts/{postId}", h.handleErr(h.handleUpdatePost))
@@ -170,6 +174,49 @@ func (h *BusinessHandler) handleRequestBusiness(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(business)
+	return nil
+}
+
+func (h *BusinessHandler) handleUploadBusinessImage(w http.ResponseWriter, r *http.Request) error {
+	session, err := h.sessions.GetSession(r)
+	if err != nil {
+		return err
+	}
+	businessId, err := uuid.Parse(r.PathValue(businessIdParam))
+	if err != nil {
+		return services.NewNotFoundServiceError(err)
+	}
+
+	const maxSize = 10 << 20 // 10 MB
+	err = r.ParseMultipartForm(maxSize)
+	if err != nil {
+		h.logger.Debug("Error parsing multipart form", "err", err)
+		return err
+	}
+
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		h.logger.Debug("Error getting file from form", "err", err)
+		return err
+	}
+	h.logger.Debug("Retreived file", "size", header.Size, "name", header.Filename)
+	defer file.Close()
+	start := make([]byte, 512)
+	if _, err = file.Read(start); err != nil {
+		return err
+	}
+	mtype := http.DetectContentType(start)
+	if !strings.HasPrefix(mtype, "image/") {
+		h.logger.Debug("Invalid file type", "mimetype", mtype)
+		return services.NewBadRequestServiceError(fmt.Errorf("Invalid file type: %v", mtype))
+	}
+
+	file.Seek(0, io.SeekStart)
+	err = h.setBusinessImage(r.Context(), session, &businessId, header.Filename, file)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

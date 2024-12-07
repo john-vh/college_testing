@@ -3,10 +3,13 @@ package business
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/john-vh/college_testing/backend/db"
+	"github.com/john-vh/college_testing/backend/filestore"
 	"github.com/john-vh/college_testing/backend/models"
 	"github.com/john-vh/college_testing/backend/services"
 	"github.com/john-vh/college_testing/backend/services/notifications"
@@ -19,6 +22,7 @@ type BusinessHandler struct {
 	sessions                  *sessions.SessionsHandler
 	users                     *user.UserHandler
 	store                     *db.PgxStore
+	filestore                 filestore.FileStore
 	notifications             *notifications.NotificationsService
 	notificationsTemplatesDir string
 	frontendURL               string
@@ -30,6 +34,7 @@ func NewBusinessHandler(
 	sessions *sessions.SessionsHandler,
 	users *user.UserHandler,
 	store *db.PgxStore,
+	filestore filestore.FileStore,
 	notifications *notifications.NotificationsService,
 	notificationsTemplatesDir string,
 	frontendURL string,
@@ -40,6 +45,7 @@ func NewBusinessHandler(
 		sessions:                  sessions,
 		users:                     users,
 		store:                     store,
+		filestore:                 filestore,
 		notifications:             notifications,
 		notificationsTemplatesDir: notificationsTemplatesDir,
 		frontendURL:               frontendURL,
@@ -87,6 +93,44 @@ func (h *BusinessHandler) RequestBusiness(ctx context.Context, session *sessions
 	go h.sendBusinessRequestedNotifications(business)
 
 	return business, nil
+}
+
+func (h *BusinessHandler) setBusinessImage(ctx context.Context, session *sessions.Session, businessId *uuid.UUID, filename string, f io.ReadSeeker) (err error) {
+	userId := session.GetUserId()
+	if userId == nil {
+		return services.NewUnauthenticatedServiceError(nil)
+	}
+
+	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
+		user, err := pq.GetUserForId(ctx, userId)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
+		}
+
+		business, err := pq.GetBusinessForId(ctx, businessId)
+		if err != nil {
+			if errors.Is(err, db.ErrNoRows) {
+				return services.NewNotFoundServiceError(err)
+			}
+			return err
+		}
+		err = AuthorizeBusinessAction(user, BUSINESS_ACTION_UPDATE, business, nil)
+		if err != nil {
+			return err
+		}
+		ext := filepath.Ext(filename)
+
+		err = h.filestore.UploadObject(businessId.String()+ext, f)
+		if err != nil {
+			h.logger.Warn("Failed to upload image for business", "err", err)
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (h *BusinessHandler) sendBusinessRequestedNotifications(b *models.Business) error {

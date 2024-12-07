@@ -21,6 +21,8 @@ type Config struct {
 	POSTGRES_PORT               string
 	POSTGRES_DB                 string
 	REDIS_ADDR                  string
+	AWS_REGION                  string
+	IMAGES_S3_BUCKET            string
 	MAIL_USER                   string
 	MAIL_PASSWORD               string
 	MAIL_HOST                   string
