@@ -7,7 +7,8 @@ export interface BusinessInfo {
     status: string,
     name: string,
     desc: string,
-    website: string
+    website: string,
+    logo_url?: string
 }
 
 interface BusinessInfoProps {

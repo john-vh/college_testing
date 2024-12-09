@@ -117,9 +117,9 @@ export const AddBusiness = ({ setBusinessAdd, fetchData }: AddBusinessProps) => 
                             id="name"
                             value={userInfo.name}
                             onChange={(e) => handleChangeInfo("name", e.target.value)}
-                            placeholder="Enter business name"
+                            placeholder="Business name"
                             intent={errors.name ? Intent.DANGER : Intent.NONE}
-                            leftIcon="bullseye"
+                            leftIcon="office"
                         />
                     </FormGroup>
 
@@ -134,7 +134,7 @@ export const AddBusiness = ({ setBusinessAdd, fetchData }: AddBusinessProps) => 
                             id="desc"
                             value={userInfo.desc}
                             onChange={(e) => handleChangeInfo("desc", e.target.value)}
-                            placeholder="Enter business description"
+                            placeholder="Description"
                             intent={errors.desc ? Intent.DANGER : Intent.NONE}
                             leftIcon="annotation"
                         />
@@ -152,23 +152,15 @@ export const AddBusiness = ({ setBusinessAdd, fetchData }: AddBusinessProps) => 
                             onChange={(e) => handleChangeInfo("website", e.target.value)}
                             placeholder="https://example.com"
                             intent={errors.website ? Intent.DANGER : Intent.NONE}
-                            leftIcon="globe"
+                            leftIcon="globe-network"
                         />
                     </FormGroup>
 
                     <div style={{
                         display: "flex",
-                        justifyContent: "flex-end",
                         gap: "0.75rem",
                         marginTop: "2rem"
                     }}>
-                        <Button
-                            onClick={() => setBusinessAdd(false)}
-                            minimal={true}
-                            icon="cross"
-                        >
-                            Cancel
-                        </Button>
                         <Button
                             onClick={handleSubmit}
                             intent={Intent.PRIMARY}
@@ -176,6 +168,11 @@ export const AddBusiness = ({ setBusinessAdd, fetchData }: AddBusinessProps) => 
                             icon={isLoading ? <Spinner size={16} /> : "tick"}
                         >
                             {isLoading ? "Creating..." : "Create Business"}
+                        </Button>
+                        <Button
+                            onClick={() => setBusinessAdd(false)}
+                        >
+                            Cancel
                         </Button>
                     </div>
                 </div>

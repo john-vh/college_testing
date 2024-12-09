@@ -1,4 +1,4 @@
-import { Button, Card, FormGroup, H3, InputGroup, Intent, Spinner, Tag } from "@blueprintjs/core";
+import { Button, Card, FormGroup, H2, H3, InputGroup, Intent, Spinner, Tag, TextArea } from "@blueprintjs/core";
 import { Toaster, Position } from "@blueprintjs/core";
 import React, { useMemo, useState } from "react";
 import { AddPosting } from "./AddPosting.tsx";
@@ -11,8 +11,12 @@ const toaster = Toaster.create({
     position: Position.TOP,
 });
 
-export const PostingInfoPage: React.FC = () => {
-    const { data = [], business_map, error, fetchPostingInfo } = usePostingInfo();
+interface PostingInfoProps {
+    isAdmin: boolean;
+}
+
+export const PostingInfoPage = ({ isAdmin = false }: PostingInfoProps) => {
+    const { data = [], business_map, error, fetchPostingInfo } = usePostingInfo({ isAdmin });
     const { activatePosting, loading: activateLoading } = useActivatePosting();
     const { deactivatePosting, loading: deactivateLoading } = useDeactivatePosting();
     const [showAddPosting, setShowAddPosting] = useState(false);
@@ -88,14 +92,17 @@ export const PostingInfoPage: React.FC = () => {
 
     return (
         <div className="content">
-            <Button
-                intent={Intent.PRIMARY}
-                large={true}
-                style={{ width: "100%", marginBottom: "20px" }}
-                onClick={handleAddNewPosting}
-            >
-                Add Posting
-            </Button>
+            <div className="Flex" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                <H2 style={{ marginBottom: "0px" }}>Manage Postings</H2>
+                <Button
+                    intent="primary"
+                    large
+
+                    onClick={() => handleAddNewPosting()}
+                >
+                    Add Posting
+                </Button>
+            </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 {sortedData.map((posting) => (
@@ -123,7 +130,7 @@ export const PostingInfoPage: React.FC = () => {
                             <Tag round intent={posting.status === "active" ? Intent.SUCCESS : Intent.DANGER}>{posting.status.toLocaleUpperCase()}</Tag>
                         </div>
 
-                        <FormGroup label="Title" labelFor={`title-${posting.id}`}>
+                        <FormGroup inline label="Title" labelFor={`title-${posting.id}`}>
                             <InputGroup
                                 id={`title-${posting.id}`}
                                 value={posting.title}
@@ -132,17 +139,7 @@ export const PostingInfoPage: React.FC = () => {
                             />
                         </FormGroup>
 
-                        <FormGroup label="Description" labelFor={`desc-${posting.id}`}>
-                            <InputGroup
-                                asyncControl
-                                id={`desc-${posting.id}`}
-                                value={posting.desc}
-                                readOnly
-                                fill
-                            />
-                        </FormGroup>
-
-                        <FormGroup label="Business" labelFor={`business-${posting.id}`}>
+                        <FormGroup inline label="Business" labelFor={`business-${posting.id}`}>
                             <InputGroup
                                 id={`business-${posting.id}`}
                                 value={business_map.get(posting.business_id)?.name}
@@ -151,10 +148,21 @@ export const PostingInfoPage: React.FC = () => {
                             />
                         </FormGroup>
 
-                        <FormGroup label="Id" labelFor={`id-${posting.id}`}>
+                        <FormGroup inline label="ID" labelFor={`id-${posting.id}`}>
                             <InputGroup
                                 id={`id-${posting.id}`}
                                 value={posting.id.toString()}
+                                readOnly
+                                fill
+                            />
+                        </FormGroup>
+
+                        <FormGroup label="Description" labelFor={`desc-${posting.id}`}>
+                            <TextArea
+                                autoResize
+                                asyncControl
+                                id={`desc-${posting.id}`}
+                                value={posting.desc}
                                 readOnly
                                 fill
                             />
