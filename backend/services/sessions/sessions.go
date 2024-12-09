@@ -170,7 +170,7 @@ func (h *SessionsHandler) getSessionFromStore(ctx context.Context, id string) (*
 		return nil, err
 	}
 
-	if (*session.data.UserId) == uuid.Nil {
+	if session.data.UserId == nil || (*session.data.UserId) == uuid.Nil {
 		session.data.UserId = nil
 		session.ttl = h.unauthorizedTTL
 	}
