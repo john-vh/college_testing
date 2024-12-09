@@ -1,4 +1,4 @@
-import { Button, Card, FormGroup, H3, InputGroup, Intent, Label, Tag } from "@blueprintjs/core";
+import { Button, Card, FormGroup, H2, H3, InputGroup, Intent, Label, Tag } from "@blueprintjs/core";
 import { Toaster, Position } from "@blueprintjs/core";
 import React, { useMemo } from "react";
 import { UserApplicationInfo, useUserApplicationInfo } from "../hooks/useUserApplicationInfo.ts";
@@ -38,37 +38,39 @@ export const UserApplicationInfoPage: React.FC = () => {
     }
 
     return (
-        <div style={{ width: "100%", padding: "20px", marginLeft: "200px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                {sortedData.map((application) => (
-                    <Card interactive={true}>
-                        <div className="Flex" style={{ justifyContent: "space-between" }}>
-                            <H3>Application: {application.post.title}</H3>
-                            <Tag round intent={
-                                application.status === "active"
-                                    ? Intent.SUCCESS
-                                    : application.status === "pending"
-                                        ? Intent.WARNING
-                                        : Intent.DANGER
-                            }>{application.status.toLocaleUpperCase()}</Tag>
-                        </div>
+        <div className="content">
+            <H2 style={{ marginBottom: "0px" }}>Manage Applications</H2>
+            {sortedData.map((application) => (
+                <Card interactive={true}>
+                    <div className="Flex" style={{ justifyContent: "space-between" }}>
+                        <H3>Application Info</H3>
+                        <Tag round intent={
+                            application.status === "active"
+                                ? Intent.SUCCESS
+                                : application.status === "pending"
+                                    ? Intent.WARNING
+                                    : Intent.DANGER
+                        }>{application.status.toLocaleUpperCase()}</Tag>
+                    </div>
 
-                        <Label>{formatDate(application.created_at)}</Label>
-                        <FormGroup label="Business"
-                            labelFor="business" >
-                            <InputGroup id="business" placeholder={application.business.name} readOnly />
-                        </FormGroup>
-                        <FormGroup label="Compensation"
-                            labelFor="pay" >
-                            <InputGroup id="pay" placeholder={"$" + application.post.pay.toString()} readOnly />
-                        </FormGroup>
-                        <div className="Flex" style={{ justifyContent: "space-between" }}>
-                            {application.status !== "withdrawn" && <Button onClick={() => handleWithdraw(application)}>Withdraw application</Button>}
-                            <Button rightIcon="issue" minimal />
-                        </div>
-                    </Card>
-                ))}
-            </div>
+                    <Tag minimal style={{ marginBottom: "7px" }}>{formatDate(application.created_at)}</Tag>
+                    <FormGroup label="Title" labelFor="title">
+                        <InputGroup id="title" defaultValue={application.post.title}></InputGroup>
+                    </FormGroup>
+                    <FormGroup label="Business"
+                        labelFor="business" >
+                        <InputGroup id="business" defaultValue={application.business.name} readOnly />
+                    </FormGroup>
+                    <FormGroup label="Compensation"
+                        labelFor="pay" >
+                        <InputGroup id="pay" defaultValue={"$" + application.post.pay.toString()} readOnly />
+                    </FormGroup>
+                    <div className="Flex" style={{ justifyContent: "space-between" }}>
+                        {application.status !== "withdrawn" && <Button onClick={() => handleWithdraw(application)}>Withdraw application</Button>}
+                        <Button rightIcon="issue" minimal />
+                    </div>
+                </Card>
+            ))}
         </div>
     );
 };

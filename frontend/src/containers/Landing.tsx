@@ -1,13 +1,20 @@
-import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, InputGroup, NonIdealState, Tag } from "@blueprintjs/core";
+import { Button, Card, Classes, Checkbox, H5, Navbar, NavbarGroup, NavbarHeading, NavbarDivider, Alignment, Icon, InputGroup, NonIdealState, Tag, Dialog, DialogBody, DialogFooter, Colors } from "@blueprintjs/core";
 import React, { useState, useMemo } from 'react';
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
 import { useNavigate } from 'react-router-dom';
 import useAllPostings, { PostingInfo } from '../hooks/useAllPostings.ts';
 import useAccountInfo from "../hooks/useAccountInfo.ts";
 import { formatDate } from "../components/UserApplicationInfo.tsx";
+import { HelpDialog } from "../components/HelpDialog.tsx";
+import { LoginSplash } from "../components/LoginSplash.tsx";
 
 export const Landing = () => {
+    const [isOpen, setIsOpen] = useState<boolean>(false);
     const account = useAccountInfo();
+
+    const handleDialog = (isOpen: boolean) => {
+        setIsOpen(isOpen);
+    }
 
     const handleLogin = () => {
         window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
@@ -15,22 +22,14 @@ export const Landing = () => {
 
     if (account == null) {
         return (
-            <div>
-                <LandingNavbar showHome={false} />
-                <div className='App' style={{ margin: "50px" }}>
-                    <NonIdealState
-                        icon="log-in"
-                        title="Please log in"
-                        description="In order to use TestHive, please log in with a Google account"
-                        action={<Button onClick={() => handleLogin()}>Log in</Button>}
-                    />
-                </div>
-            </div>
+            <LoginSplash handleDialog={handleDialog} handleLogin={handleLogin} />
         );
     }
+
     return (
         <div>
-            <LandingNavbar />
+            <HelpDialog isOpen={isOpen} setIsOpen={setIsOpen} />
+            <LandingNavbar handleDialog={handleDialog} />
             <div className='App'>
                 <TestList />
             </div>
@@ -57,7 +56,7 @@ const TestList = () => {
     if (postingInfo != null) {
         return (
             <div className='Test-list'>
-                <div style={{ position: "absolute" }}>
+                <div style={{ position: "absolute", width: "600px" }}>
                     <InputGroup
                         placeholder="Search..."
                         type="search"
@@ -83,7 +82,7 @@ const TestList = () => {
                                 <Tag minimal>{formatDate(post.created_at)}</Tag>
                                 <div className='Flex'>
                                     <div className="gap">Compensation: ${post.pay}</div>
-                                    <Button intent="primary" onClick={() => handleClick(post)}>Details</Button>
+                                    <Button style={{ background: Colors.VIOLET2, color: Colors.WHITE }} onClick={() => handleClick(post)}>Details</Button>
                                 </div>
                             </div>
                         </Card>
@@ -92,32 +91,5 @@ const TestList = () => {
                 ))}
             </div>
         );
-    }
-}
-
-const FilterBar = () => {
-    const [isOpen, setOpen] = useState(true);
-
-    if (isOpen) {
-        return (
-            <div className='Filter-bar'>
-                <div className="Filter-header">
-                    <div><strong>Filter Bar</strong></div>
-                    <Button intent="primary" onClick={() => setOpen(!isOpen)} icon='filter'></Button>
-                </div>
-                <Checkbox label='Filter 1' />
-                <Checkbox label='Filter 2' />
-                <Checkbox label='Filter 3' />
-            </div>
-        );
-    }
-
-    else {
-        return (
-            <div className='hover'>
-                <Button intent="primary" onClick={() => setOpen(!isOpen)} icon='filter'></Button>
-            </div>
-
-        )
     }
 }

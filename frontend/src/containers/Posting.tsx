@@ -21,7 +21,7 @@ export const Posting = () => {
 
     return (
         <div>
-            <LandingNavbar />
+            <LandingNavbar handleDialog={() => null} />
             <PostingContent post={post} businessMap={businessMap} />
         </div>
     );

@@ -1,4 +1,4 @@
-import { Button, Card, Checkbox, FormGroup, H3, H5, Icon, InputGroup } from "@blueprintjs/core";
+import { Button, Card, Checkbox, Colors, FormGroup, H2, H5, Icon, InputGroup } from "@blueprintjs/core";
 import useAccountInfo, { useGetRole } from "../hooks/useAccountInfo.ts";
 import React, { useEffect } from "react";
 import { LandingNavbar } from "../components/LandingNavbar.tsx";
@@ -24,13 +24,13 @@ export const AccountInfo = () => {
   if (data != null) {
     return (
       <div className="content">
+        <H2 style={{ marginBottom: "0px" }}>Account Information</H2>
         <Card interactive={true} >
-          <H3>Account Information</H3>
-          <FormGroup label="Name"
+          <FormGroup inline label="Name"
             labelFor="name" >
             <InputGroup id="name" defaultValue={data.name} />
           </FormGroup>
-          <FormGroup label="Email"
+          <FormGroup inline label="Email"
             labelFor="email" >
             <InputGroup id="email" defaultValue={data.email} />
           </FormGroup>
@@ -42,7 +42,7 @@ export const AccountInfo = () => {
           </FormGroup>
           <Button onClick={() => handleLogout()}>Logout</Button>
         </Card>
-      </div>
+      </div >
     );
   }
 }

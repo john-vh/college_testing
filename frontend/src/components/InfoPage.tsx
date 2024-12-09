@@ -30,15 +30,14 @@ export const InfoPage = () => {
             return <AccountInfo />;
         case "application":
             return (
-                //(role === Role.Founder || role === Role.Admin) ? <ApplicationInfo /> : <UserApplicationInfo />
-                <UserApplicationInfoPage />
+                (role === Role.Founder || role === Role.Admin) ? <ApplicationInfo isAdmin={role === Role.Admin} /> : <UserApplicationInfoPage />
             );
         case "business":
-            return <BusinessInfoPage />;
+            return <BusinessInfoPage isAdmin={role === Role.Admin} />;
         case "approvals":
             return <AccountInfo />;
         case "postings":
-            return <PostingInfoPage />;
+            return <PostingInfoPage isAdmin={role === Role.Admin} />;
         default:
             return <AccountInfo />;
     }

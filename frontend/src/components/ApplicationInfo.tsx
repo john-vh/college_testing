@@ -1,4 +1,4 @@
-import { Button, Card, CardList, Collapse, FormGroup, H3, H5, Icon, InputGroup, Label, TextArea } from "@blueprintjs/core";
+import { Button, Card, CardList, Collapse, Colors, FormGroup, H3, H5, Icon, InputGroup, Label, TextArea } from "@blueprintjs/core";
 import useAccountInfo from "../hooks/useAccountInfo.ts";
 import React, { useEffect, useMemo, useState } from "react";
 import { useApplicationInfo } from "../hooks/useApplicationInfo.ts";
@@ -6,11 +6,16 @@ import { useBusinessIds } from "../hooks/useBusinessIds.ts";
 import { useAcceptApplication } from "../hooks/useAcceptApplication.ts";
 import { useRejectApplication } from "../hooks/useRejectApplication.ts";
 import { usePostingNames } from "../hooks/usePostingIds.ts";
+import { useBusinessInfo } from "../hooks/useBusinessInfo.ts";
 
-export const ApplicationInfo = () => {
+interface ApplicationInfoProps {
+    isAdmin: boolean;
+}
+
+export const ApplicationInfo = ({ isAdmin }: ApplicationInfoProps) => {
     const [isOpen, setIsOpen] = useState<boolean[]>([]);
-    const data = useApplicationInfo();
-    const names = usePostingNames();
+    const data = useApplicationInfo({ isAdmin });
+    const names = usePostingNames(isAdmin);
     const acceptApplication = useAcceptApplication();
     const rejectApplication = useRejectApplication();
 
@@ -34,11 +39,11 @@ export const ApplicationInfo = () => {
     }, [data]);
 
     return (
-        <div className="content">
+        <div className="content" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
             <CardList>
                 {filteredData.map((entry, id) => (
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                        <Card key={id}>
+                        <Card key={id} style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                 <H5>{names.get(entry.post_id) || 'Unknown Posting'}</H5>
                                 {entry.applications.length > 0 && <Button
@@ -48,35 +53,40 @@ export const ApplicationInfo = () => {
                                 </Button>}
                             </div>
                             <Collapse isOpen={isOpen[id]}>
-                                {entry.applications.map((application, index) =>
-                                    <div style={{ paddingTop: "20px" }}>
-                                        <Card interactive={true} >
-                                            <H3>Application Information</H3>
-                                            <FormGroup inline label="Posting"
-                                                labelFor="posting" >
-                                                <InputGroup id={"posting" + index} readOnly />
-                                            </FormGroup>
-                                            <FormGroup label="Name"
-                                                labelFor="name" >
-                                                <InputGroup id="name" placeholder={application.user.name} readOnly />
-                                            </FormGroup>
-                                            <FormGroup label="Email"
-                                                labelFor="email" >
-                                                <InputGroup id="email" placeholder={application.user.email} readOnly />
-                                            </FormGroup>
-                                            <FormGroup label="School"
-                                                labelFor="school" >
-                                                <InputGroup id="school" readOnly />
-                                            </FormGroup>
-                                            <FormGroup label="Notes"
-                                                labelFor="notes" >
-                                                <TextArea id="email" defaultValue={application.notes} readOnly fill />
-                                            </FormGroup>
-                                            <Button onClick={() => handleAcceptApplication(entry, index)}>Accept applicant</Button>
-                                            <Button onClick={() => handleRejectApplication(entry, index)} style={{ margin: "10px" }}>Reject applicant</Button>
-                                        </Card>
+                                <div style={{
+                                    width: '100%',
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                    padding: '20px 0'
+                                }}>
+                                    <div style={{
+                                        display: "flex",
+                                        flexDirection: "row",
+                                        overflowX: "scroll",
+                                        gap: "20px",
+                                        padding: "10px",
+                                    }}>
+                                        {entry.applications.map((application, index) =>
+                                            <Card interactive={true} >
+                                                <H3>Application Information</H3>
+                                                <FormGroup inline label="Posting"
+                                                    labelFor="posting" >
+                                                    <InputGroup id={"posting"} placeholder={entry.post_id.toString()} readOnly />
+                                                </FormGroup>
+                                                <FormGroup label="Name"
+                                                    labelFor="name" >
+                                                    <InputGroup id="name" placeholder={application.user.name} readOnly />
+                                                </FormGroup>
+                                                <FormGroup label="Email"
+                                                    labelFor="email" >
+                                                    <InputGroup id="email" placeholder={application.user.email} readOnly />
+                                                </FormGroup>
+                                                <Button onClick={() => handleAcceptApplication(entry, index)} style={{ background: Colors.VIOLET2, color: Colors.WHITE }}>Accept applicant</Button>
+                                                <Button onClick={() => handleRejectApplication(entry, index)} style={{ margin: "10px" }}>Reject applicant</Button>
+                                            </Card>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </Collapse>
                         </Card>
                     </div>

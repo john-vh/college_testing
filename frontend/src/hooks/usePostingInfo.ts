@@ -10,7 +10,11 @@ interface PostingInfoHook {
   fetchPostingInfo: () => Promise<void>;
 }
 
-export function usePostingInfo(): PostingInfoHook {
+interface PostingInfoProps {
+  isAdmin: boolean;
+}
+
+export function usePostingInfo({ isAdmin }: PostingInfoProps): PostingInfoHook {
   const [data, setData] = useState<PostingInfo[]>([]);
   const [business_map, setBusinessMap] = useState<Map<string, BusinessInfo>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -21,10 +25,21 @@ export function usePostingInfo(): PostingInfoHook {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/posts`,
-        { mode: "cors", credentials: 'include' });
-      const business_response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/businesses`,
-        { mode: "cors", credentials: 'include' });
+      let response;
+      let business_response;
+      if (isAdmin) {
+        response = await fetch(`${process.env.REACT_APP_API_URL}/admin/posts`,
+          { mode: "cors", credentials: 'include' });
+        business_response = await fetch(`${process.env.REACT_APP_API_URL}/admin/businesses`,
+          { mode: "cors", credentials: 'include' });
+      }
+      else {
+        response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/posts`,
+          { mode: "cors", credentials: 'include' });
+        business_response = await fetch(`${process.env.REACT_APP_API_URL}/users/0/businesses`,
+          { mode: "cors", credentials: 'include' });
+      }
+
       if (!response.ok || !business_response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -45,11 +60,11 @@ export function usePostingInfo(): PostingInfoHook {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
-    useState(() => {
-        fetchPostingInfo();
-    });
+  useState(() => {
+    fetchPostingInfo();
+  });
 
   return {
     data,
