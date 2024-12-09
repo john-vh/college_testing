@@ -88,6 +88,10 @@ func (h *BusinessHandler) UpdatePost(ctx context.Context, session *sessions.Sess
 		return services.NewUnauthenticatedServiceError(nil)
 	}
 
+	if err := models.ValidateData(data); err != nil {
+		return err
+	}
+
 	h.logger.Debug("Updating post", "Business Id", businessId, "Post Id", postId)
 	return db.WithTx(ctx, h.store, func(pq *db.PgxQueries) error {
 		user, err := pq.GetUserForId(ctx, userId)
