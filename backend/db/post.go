@@ -87,7 +87,7 @@ func (pq *PgxQueries) CreatePost(ctx context.Context, businessId *uuid.UUID, dat
 func (pq *PgxQueries) UpdatePost(ctx context.Context, businessId *uuid.UUID, postId int, data *models.PostUpdate) error {
 	res, err := pq.tx.Exec(ctx, `
     UPDATE posts SET
-    (title, description, pay, time_est, updated_at) = (@title, @description, @pay, @time_est, NOW())
+    (title, description, pay, time_est, updated_at) = (@title, @description, @pay, @timeEst, NOW())
     WHERE posts.id = @postId AND posts.business_id = @businessId
     `, pgx.NamedArgs{
 		"businessId":  businessId,
